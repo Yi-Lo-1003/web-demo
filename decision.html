@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>日常决策小助手</title>
+<style>
+  :root{
+    --paper:#FBF3E7;
+    --paper2:#FDF7EC;
+    --card:#FFFDF7;
+    --card-border:#E8D7BE;
+    --ink:#5B4636;
+    --ink-soft:#9A8068;
+    --primary:#E08E6D;
+    --primary-d:#C9774F;
+    --amber:#E6A23C;
+    --rose:#D98C8C;
+    --sage:#A9C0A0;
+    --sky:#A9C5D6;
+    --lav:#C4AFCB;
+    --tape-washi:rgba(240,190,130,.55);
+    --shadow:0 3px 10px rgba(150,110,70,.16), 0 1px 2px rgba(150,110,70,.10);
+    --shadow-pop:0 10px 24px rgba(150,110,70,.22);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB","KaiTi",sans-serif;
+    background-color:var(--paper);
+    background-image:
+      linear-gradient(rgba(200,170,130,.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(200,170,130,.06) 1px, transparent 1px),
+      radial-gradient(140% 90% at 50% -10%, #FCEBD2 0%, rgba(252,235,210,0) 55%);
+    background-size:22px 22px, 22px 22px, 100% 100%;
+    background-attachment:fixed;
+    color:var(--ink);min-height:100vh;display:flex;justify-content:center;
+  }
+  .app{width:100%;max-width:480px;padding:20px 16px 40px;}
+
+  header{text-align:center;margin-bottom:16px;position:relative;}
+  header .logo{font-size:40px;line-height:1;display:inline-block;
+    transform:rotate(-4deg);filter:drop-shadow(0 2px 2px rgba(150,110,70,.25));}
+  header h1{
+    margin:8px 0 4px;font-size:24px;letter-spacing:2px;font-weight:800;color:var(--ink);
+    position:relative;display:inline-block;padding:0 8px;
+  }
+  header h1::after{content:'';position:absolute;left:0;right:0;bottom:2px;height:9px;
+    background:var(--tape-washi);border-radius:2px;z-index:-1;}
+  header p{margin:4px 0 0;font-size:12px;color:var(--ink-soft);letter-spacing:1px;}
+
+  .page{display:none;}
+  .page.active{display:block;animation:slidein .3s ease;}
+  @keyframes slidein{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+
+  .steps{display:flex;align-items:center;justify-content:center;gap:10px;margin:4px 0 18px;}
+  .step{display:flex;align-items:center;gap:6px;}
+  .step .num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:13px;font-weight:800;background:#F0E2CE;color:var(--ink-soft);
+    border:2px solid #EAD7BC;transform:rotate(-4deg);}
+  .step.on .num{background:var(--primary);color:#fff;border-color:var(--primary-d);
+    box-shadow:var(--shadow);transform:rotate(4deg);}
+  .step .lbl{font-size:13px;font-weight:700;color:var(--ink-soft);}
+  .step.on .lbl{color:var(--ink);}
+  .step-line{width:36px;height:2px;background:repeating-linear-gradient(90deg,#E4CDAF 0 6px, transparent 6px 10px);}
+  .step-line.done{background:var(--primary);}
+
+  /* 通用贴纸卡片 */
+  .scene-list{display:flex;flex-direction:column;gap:14px;}
+  .scene-card{
+    display:flex;align-items:center;gap:12px;padding:15px 14px;border-radius:14px;
+    background:var(--card);border:2px solid var(--card-border);cursor:pointer;
+    box-shadow:var(--shadow);position:relative;transition:transform .15s, box-shadow .2s;
+    transform:rotate(-.5deg);
+  }
+  .scene-card:nth-child(even){transform:rotate(.6deg);}
+  .scene-card::before{content:'';position:absolute;top:-9px;left:50%;transform:translateX(-50%) rotate(-2deg);
+    width:54px;height:18px;background:var(--tape-washi);border-radius:2px;opacity:.9;}
+  .scene-card:active{transform:scale(.98);}
+  .scene-card .ic{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;
+    justify-content:center;font-size:26px;background:#FBEEDD;border:2px dashed #EBD2B0;flex:0 0 auto;
+    transform:rotate(-3deg);}
+  .scene-card .info{flex:1;min-width:0;}
+  .scene-card .name{font-size:17px;font-weight:800;letter-spacing:.5px;}
+  .scene-card .cnt{font-size:12px;color:var(--ink-soft);margin-top:3px;}
+  .scene-card .cnt::before{content:'· ';}
+  .scene-card .go{color:var(--primary-d);font-size:22px;flex:0 0 auto;font-weight:800;}
+  .scene-add{
+    padding:14px;border-radius:14px;border:2px dashed #DCC6A4;background:transparent;
+    color:var(--ink-soft);font-weight:700;text-align:center;cursor:pointer;font-size:15px;
+    letter-spacing:1px;position:relative;
+  }
+  .scene-add:hover{color:var(--primary-d);border-color:var(--primary);}
+
+  .method-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+  .method-card{
+    background:var(--card);border:2px solid var(--card-border);border-radius:14px;
+    padding:20px 12px 16px;text-align:center;cursor:pointer;position:relative;
+    box-shadow:var(--shadow);transition:transform .15s, box-shadow .2s, border-color .2s;
+  }
+  .method-card:nth-child(odd){transform:rotate(-.8deg);}
+  .method-card:nth-child(even){transform:rotate(.8deg);}
+  .method-card:active{transform:scale(.97);}
+  .method-card .ic{font-size:38px;filter:drop-shadow(0 2px 2px rgba(150,110,70,.2));}
+  .method-card .lb{font-size:16px;font-weight:800;margin-top:8px;letter-spacing:1px;}
+  .method-card .ds{font-size:12px;color:var(--ink-soft);margin-top:4px;line-height:1.5;}
+  .method-card.sel{border-color:var(--primary);background:#FFF3E7;box-shadow:var(--shadow-pop);}
+  .method-card.sel::before{content:'';position:absolute;top:-8px;left:50%;transform:translateX(-50%) rotate(3deg);
+    width:46px;height:16px;background:rgba(240,170,110,.6);border-radius:2px;}
+  .method-card .ck{display:inline-block;margin-top:12px;width:22px;height:22px;border-radius:50%;
+    border:2px solid #DCC6A4;position:relative;}
+  .method-card.sel .ck{background:var(--primary);border-color:var(--primary-d);}
+  .method-card.sel .ck::after{content:'';position:absolute;left:7px;top:3px;width:5px;height:10px;
+    border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg);}
+
+  .act{margin-top:20px;width:100%;padding:15px;border:none;border-radius:14px;
+    background:linear-gradient(135deg,var(--primary),var(--primary-d));color:#fff;
+    font-size:17px;font-weight:800;cursor:pointer;box-shadow:var(--shadow-pop);
+    letter-spacing:2px;transition:transform .15s;transform:rotate(-.3deg);}
+  .act:active{transform:scale(.97) rotate(-.3deg);}
+  .act:disabled{opacity:.5;}
+
+  .back-bar{display:inline-flex;align-items:center;gap:6px;margin-bottom:14px;color:var(--ink-soft);
+    font-size:14px;font-weight:700;cursor:pointer;width:fit-content;padding:5px 10px 5px 6px;
+    border-radius:10px;background:rgba(255,253,247,.7);border:1.5px dashed #E2CFAF;}
+  .back-bar:hover{color:var(--ink);}
+  .scene-title{text-align:center;margin:0 0 18px;}
+  .scene-title .tag{font-size:12px;color:var(--ink-soft);letter-spacing:2px;}
+  .scene-title .nm{font-size:22px;font-weight:800;margin-top:4px;position:relative;display:inline-block;padding:0 6px;}
+  .scene-title .nm::after{content:'';position:absolute;left:0;right:0;bottom:0;height:8px;
+    background:var(--tape-washi);border-radius:2px;z-index:-1;}
+
+  .stage{
+    background:var(--card);border:2px solid var(--card-border);border-radius:18px;
+    padding:24px 16px;box-shadow:var(--shadow);min-height:300px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;
+  }
+  .stage::before{content:'';position:absolute;top:-9px;left:16px;width:58px;height:18px;
+    background:rgba(169,192,160,.55);border-radius:2px;transform:rotate(-4deg);}
+  .stage::after{content:'';position:absolute;top:-8px;right:14px;width:48px;height:16px;
+    background:rgba(169,197,214,.55);border-radius:2px;transform:rotate(5deg);}
+
+  .wheel-wrap{position:relative;width:300px;height:300px;max-width:78vw;max-height:78vw;}
+  .wheel-wrap canvas{width:100%;height:100%;display:block;border-radius:50%;
+    box-shadow:0 6px 18px rgba(176,128,86,.25);background:#fff;border:3px solid #fff;}
+  .pointer{position:absolute;top:-8px;left:50%;transform:translateX(-50%) rotate(0deg);
+    width:0;height:0;border-left:13px solid transparent;border-right:13px solid transparent;
+    border-top:24px solid var(--primary-d);filter:drop-shadow(0 2px 2px rgba(0,0,0,.2));z-index:3;}
+
+  .dice-row{display:flex;gap:16px;justify-content:center;min-height:84px;align-items:center;}
+  .die{width:78px;height:78px;border-radius:16px;background:linear-gradient(145deg,#fff,#FBE9D6);
+    border:2px solid var(--card-border);display:flex;align-items:center;justify-content:center;
+    font-size:62px;color:var(--primary-d);box-shadow:var(--shadow);user-select:none;transform:rotate(-3deg);}
+  .die.roll{animation:shake .25s;}
+  @keyframes shake{0%{transform:rotate(-8deg) translateY(-4px)}50%{transform:rotate(8deg) translateY(4px)}100%{transform:rotate(0)}}
+  .die-toggle{display:flex;gap:8px;margin-top:14px;width:100%;}
+  .die-toggle button{flex:1;padding:9px;border-radius:12px;border:2px solid var(--card-border);
+    background:var(--card);color:var(--ink-soft);font-weight:700;cursor:pointer;}
+  .die-toggle button.on{background:var(--primary);color:#fff;border-color:var(--primary-d);}
+
+  .coin-perspective{perspective:700px;}
+  .coin{width:120px;height:120px;position:relative;transform-style:preserve-3d;
+    transition:transform 1s cubic-bezier(.2,.7,.2,1);}
+  .coin .face{position:absolute;inset:0;border-radius:50%;backface-visibility:hidden;
+    display:flex;align-items:center;justify-content:center;padding:10px;text-align:center;
+    font-size:20px;font-weight:800;box-shadow:var(--shadow-pop);border:3px solid #fff;word-break:break-all;}
+  .coin .front{background:radial-gradient(circle at 35% 30%,#F6C28B,var(--amber));color:#fff;}
+  .coin .back{background:radial-gradient(circle at 35% 30%,#EBA98C,var(--rose));color:#fff;transform:rotateY(180deg);}
+
+  /* 抽签筒 */
+  .draw-scene{display:flex;flex-direction:column;align-items:center;gap:18px;width:100%;}
+  .draw-stage{position:relative;width:180px;height:200px;display:flex;align-items:flex-end;justify-content:center;}
+  .draw-jar{position:relative;width:130px;height:150px;background:linear-gradient(180deg,#E9BFA0,#C98D63);
+    border-radius:18px 18px 40px 40px;box-shadow:inset 0 -12px 20px rgba(0,0,0,.12), var(--shadow);}
+  .draw-jar::before{content:'';position:absolute;top:-14px;left:50%;transform:translateX(-50%);
+    width:80px;height:20px;background:#B97B4F;border-radius:6px;}
+  .draw-jar .lip{position:absolute;top:-6px;left:50%;transform:translateX(-50%);
+    width:100px;height:12px;background:#A5673F;border-radius:8px;}
+  .draw-sticks{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);
+    display:flex;flex-wrap:wrap;gap:2px;width:90px;justify-content:center;max-height:60px;overflow:hidden;}
+  .draw-sticks .st{width:8px;height:52px;background:linear-gradient(180deg,#F6D9A8,#E7B878);
+    border-radius:4px;border:1px solid #D7A860;}
+  .draw-card{position:relative;width:190px;min-height:76px;border-radius:12px;
+    background:linear-gradient(145deg,#fff,#FCEBD6);border:2px dashed #E3C79F;
+    display:flex;align-items:center;justify-content:center;padding:12px;text-align:center;
+    font-size:20px;font-weight:800;color:var(--primary-d);box-shadow:var(--shadow);transform:rotate(-1deg);}
+  .draw-card.pop{animation:drawpop .7s cubic-bezier(.2,1.2,.3,1);}
+  @keyframes drawpop{0%{transform:translateY(0) scale(.3) rotate(-6deg);opacity:0}
+    55%{transform:translateY(-120px) scale(1.1) rotate(2deg);opacity:1}
+    100%{transform:translateY(0) scale(1) rotate(-1deg)}}
+  .draw-count{font-size:13px;color:var(--ink-soft);}
+
+  .sub-act{margin-top:10px;background:transparent;color:var(--ink-soft);border:2px dashed #DCC6A4;
+    border-radius:14px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;}
+
+  .result{margin-top:16px;width:100%;text-align:center;display:none;}
+  .result.show{display:block;animation:pop .35s cubic-bezier(.2,1.4,.4,1);}
+  .result .ttl{font-size:13px;color:var(--ink-soft);letter-spacing:2px;}
+  .result .val{font-size:26px;font-weight:800;color:var(--primary-d);margin:4px 0 2px;word-break:break-all;}
+
+  .editor{margin-top:18px;background:var(--card);border:2px solid var(--card-border);
+    border-radius:18px;padding:16px;box-shadow:var(--shadow);position:relative;}
+  .editor::before{content:'';position:absolute;top:-8px;left:12px;width:56px;height:16px;
+    background:rgba(196,175,203,.5);border-radius:2px;transform:rotate(-3deg);}
+  .editor h3{margin:0 0 4px;font-size:15px;display:flex;align-items:center;gap:8px;font-weight:800;}
+  .editor .hint{font-size:12px;color:var(--ink-soft);margin:2px 0 12px;}
+  .opt-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .opt-row .idx{flex:0 0 auto;width:28px;font-size:13px;font-weight:800;color:var(--ink-soft);text-align:center;
+    background:#F6EBDD;border-radius:8px;padding:4px 0;border:1.5px dashed #E4CDAF;}
+  .opt-row input{flex:1;padding:10px 12px;border-radius:12px;border:2px solid var(--card-border);
+    background:#fff;font-size:14px;color:var(--ink);outline:none;}
+  .opt-row input:focus{border-color:var(--primary);}
+  .opt-row .del{flex:0 0 auto;width:34px;height:34px;border-radius:10px;border:none;background:#F6E2D4;
+    color:var(--primary-d);font-size:18px;cursor:pointer;transform:rotate(-2deg);}
+  .add-opt{width:100%;padding:10px;border:2px dashed #DCC6A4;border-radius:12px;
+    background:transparent;color:var(--ink-soft);font-weight:700;cursor:pointer;font-size:14px;letter-spacing:1px;}
+
+  .modal{position:fixed;inset:0;background:rgba(91,70,54,.45);display:flex;align-items:center;
+    justify-content:center;padding:24px;z-index:50;}
+  .modal-box{background:var(--card);border-radius:18px;padding:24px;width:100%;max-width:320px;
+    box-shadow:var(--shadow-pop);border:2px solid var(--card-border);position:relative;transform:rotate(-.5deg);}
+  .modal-box::before{content:'';position:absolute;top:-10px;left:50%;transform:translateX(-50%) rotate(2deg);
+    width:60px;height:20px;background:var(--tape-washi);border-radius:2px;}
+  .modal-box h3{margin:0 0 14px;font-size:18px;font-weight:800;letter-spacing:1px;}
+  .modal-box input{width:100%;padding:12px;border-radius:12px;border:2px solid var(--card-border);
+    font-size:15px;outline:none;color:var(--ink);}
+  .modal-box input:focus{border-color:var(--primary);}
+  .modal-actions{display:flex;gap:10px;margin-top:18px;}
+  .modal-actions button{flex:1;padding:11px;border-radius:12px;font-weight:800;cursor:pointer;font-size:14px;border:none;}
+  .modal-actions .cancel{background:#F1E3D2;color:var(--ink-soft);}
+  .modal-actions .ok{background:var(--primary);color:#fff;}
+
+  .hidden{display:none !important;}
+  footer{text-align:center;font-size:11px;color:var(--ink-soft);margin-top:22px;opacity:.8;}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">🍂</div>
+    <h1>日常决策小助手</h1>
+    <p>两步定乾坤：先选场景，再选方式</p>
+  </header>
+
+  <div class="steps" id="steps">
+    <div class="step on" id="step1"><span class="num">1</span><span class="lbl">选场景</span></div>
+    <div class="step-line" id="line"></div>
+    <div class="step" id="step2"><span class="num">2</span><span class="lbl">选方式</span></div>
+  </div>
+
+  <div class="page active" id="page1">
+    <div class="scene-list" id="sceneList"></div>
+  </div>
+
+  <div class="page" id="page2">
+    <div class="back-bar" id="backBtn">‹ 返回重选场景</div>
+    <div class="scene-title">
+      <div class="tag">当前场景</div>
+      <div class="nm" id="sceneName"></div>
+    </div>
+    <div class="method-grid" id="methodGrid"></div>
+    <div id="playArea"></div>
+  </div>
+</div>
+
+<div class="modal hidden" id="modal">
+  <div class="modal-box">
+    <h3 id="modalTitle">新建场景</h3>
+    <input id="modalInput" placeholder="给场景起个名字…" maxlength="12">
+    <div class="modal-actions">
+      <button class="cancel" id="modalCancel">取消</button>
+      <button class="ok" id="modalOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const STORE = "dailyDecisionApp_v3";
+  const warmPalette = ['#F2B98A','#E8A082','#F3CE95','#D9A8A0','#E9C3AC','#C9B08A','#EEDFC0','#E7C0A0'];
+  const sceneAccents = ['#E08E6D','#E6A23C','#D98C8C','#B98C6E'];
+  const sceneIcons = ['🍜','⏰','🙋','🎉'];
+
+  const defaults = {
+    scenes:[
+      {id:'s1',name:'今天吃什么',options:['外卖','食堂','火锅','面条','沙拉','随便','自己做','烧烤'], dice:['','','','','',''], coin:['','']},
+      {id:'s2',name:'今天干点啥',options:['学习','运动','打扫','追剧','摸鱼','看书','约朋友','补觉'], dice:['','','','','',''], coin:['','']},
+      {id:'s3',name:'谁请客/分摊',options:['轮流','AA制','老大请','抽签定','寿星请','这次我请'], dice:['','','','','',''], coin:['','']},
+      {id:'s4',name:'周末去哪玩',options:['逛街','看电影','爬山','宅家','周边游','聚餐','博物馆','骑行'], dice:['','','','','',''], coin:['','']}
+    ],
+    current:'s1', method:null, dice:1
+  };
+
+  let state = load();
+  let uid = 1;
+  const genId = ()=> 'u'+(Date.now().toString(36))+(uid++).toString(36);
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(STORE);
+      if(raw){
+        const d = JSON.parse(raw);
+        if(d && d.scenes && d.scenes.length){
+          // 兼容旧数据，补齐 dice/coin 字段，并确保 options 为数组
+          d.scenes = d.scenes.filter(s=>s && s.id && s.name);
+          d.scenes.forEach(s=>{
+            if(!Array.isArray(s.options)) s.options=[];
+            if(!Array.isArray(s.dice)) s.dice=['','','','','',''];
+            if(!Array.isArray(s.coin)) s.coin=['',''];
+          });
+          if(d.scenes.length && !d.scenes.find(s=>s.id===d.current)){
+            d.current = d.scenes[0].id;
+          }
+          return d;
+        }
+      }
+    }catch(e){}
+    return JSON.parse(JSON.stringify(defaults));
+  }
+  function save(){ try{ localStorage.setItem(STORE, JSON.stringify(state)); }catch(e){} }
+
+  const curScene = ()=> state.scenes.find(s=>s.id===state.current) || state.scenes[0];
+  const curOpts = ()=>{ const s=curScene(); return (s && Array.isArray(s.options)) ? s.options : []; };
+
+  /* ---------- 页面一 ---------- */
+  function renderSceneList(){
+    const list = document.getElementById('sceneList');
+    list.innerHTML = '';
+    state.scenes.forEach((s,i)=>{
+      const card = document.createElement('div');
+      card.className = 'scene-card';
+      const ic = document.createElement('div'); ic.className='ic';
+      ic.textContent = sceneIcons[i%sceneIcons.length];
+      const info = document.createElement('div'); info.className='info';
+      const nm = document.createElement('div'); nm.className='name'; nm.textContent=s.name;
+      const cnt = document.createElement('div'); cnt.className='cnt'; cnt.textContent=s.options.length+' 个选项';
+      info.appendChild(nm); info.appendChild(cnt);
+      const go = document.createElement('div'); go.className='go'; go.textContent='›';
+      card.appendChild(ic); card.appendChild(info); card.appendChild(go);
+      card.onclick = ()=> { state.current = s.id; state.method = null; save(); goPage2(); };
+      list.appendChild(card);
+    });
+    const add = document.createElement('div');
+    add.className='scene-add'; add.textContent='＋ 新建场景';
+    add.onclick = ()=> openModal('新建场景','',(name)=>addScene(name));
+    list.appendChild(add);
+  }
+  function addScene(name){
+    name=(name||'').trim(); if(!name) return;
+    state.scenes.push({id:genId(),name,options:['选项一','选项二','选项三'],dice:['','','','','',''],coin:['','']});
+    state.current=state.scenes[state.scenes.length-1].id; save(); renderSceneList();
+  }
+
+  /* ---------- 页面二：方式 ---------- */
+  const methodDefs = [
+    {k:'wheel', ic:'🎡', lb:'幸运转盘', ds:'选项落定，指针说话'},
+    {k:'dice',  ic:'🎲', lb:'掷色子',   ds:'1-6 点各对应一个选项'},
+    {k:'coin',  ic:'🪙', lb:'抛硬币',   ds:'自定义正反，二选一'},
+    {k:'draw',  ic:'🎴', lb:'抽签',     ds:'从签筒抽出一根，命运揭晓'}
+  ];
+  function renderMethodGrid(){
+    const grid = document.getElementById('methodGrid');
+    grid.innerHTML='';
+    methodDefs.forEach(md=>{
+      const c = document.createElement('div');
+      c.className='method-card' + (state.method===md.k?' sel':'');
+      c.innerHTML = '<div class="ic">'+md.ic+'</div>'+
+        '<div class="lb">'+md.lb+'</div>'+
+        '<div class="ds">'+md.ds+'</div>'+
+        '<span class="ck"></span>';
+      c.onclick = ()=>{ state.method = md.k; save(); renderMethodGrid(); renderPlayArea(); renderEditor(); };
+      grid.appendChild(c);
+    });
+  }
+
+  /* ---------- 抽取舞台 ---------- */
+  let wheelRotation=0, spinning=false, coinRotation=0, drawPool=[];
+
+  function renderPlayArea(){
+    const area = document.getElementById('playArea');
+    area.innerHTML='';
+    if(!state.method){ return; }
+    const stage = document.createElement('div'); stage.className='stage';
+    const m = state.method;
+
+    if(m==='wheel'){
+      const wrap=document.createElement('div'); wrap.className='wheel-wrap';
+      const cv=document.createElement('canvas'); cv.id='wheelCanvas';
+      const ptr=document.createElement('div'); ptr.className='pointer';
+      wrap.appendChild(cv); wrap.appendChild(ptr);
+      stage.appendChild(wrap);
+      stage.appendChild(actBtn('开始转动',spinWheel));
+      stage.appendChild(resultBox());
+      area.appendChild(stage);
+      // 等 canvas 真正进入文档后再绘制，确保尺寸与可见
+      requestAnimationFrame(()=> requestAnimationFrame(drawWheel));
+      return;
+    }
+    else if(m==='dice'){
+      const row=document.createElement('div'); row.className='dice-row';
+      const d1=document.createElement('div'); d1.className='die'; d1.id='die1'; d1.textContent='⚀';
+      const d2=document.createElement('div'); d2.className='die'; d2.id='die2';
+      d2.style.display = state.dice===2?'flex':'none';
+      row.appendChild(d1); row.appendChild(d2); stage.appendChild(row);
+      const tog=document.createElement('div'); tog.className='die-toggle';
+      const b1=document.createElement('button'); b1.textContent='1 颗'; b1.className=state.dice===1?'on':'';
+      b1.onclick=()=>{state.dice=1;save();renderPlayArea();};
+      const b2=document.createElement('button'); b2.textContent='2 颗'; b2.className=state.dice===2?'on':'';
+      b2.onclick=()=>{state.dice=2;save();renderPlayArea();};
+      tog.appendChild(b1); tog.appendChild(b2); stage.appendChild(tog);
+      stage.appendChild(actBtn('掷出去',rollDice));
+      stage.appendChild(resultBox());
+    }
+    else if(m==='coin'){
+      const persp=document.createElement('div'); persp.className='coin-perspective';
+      const coin=document.createElement('div'); coin.className='coin'; coin.id='coin';
+      const f=document.createElement('div'); f.className='face front'; f.id='coinFront';
+      const b=document.createElement('div'); b.className='face back'; b.id='coinBack';
+      coin.appendChild(f); coin.appendChild(b); persp.appendChild(coin); stage.appendChild(persp);
+      stage.appendChild(actBtn('抛一下',flipCoin));
+      stage.appendChild(resultBox());
+      syncCoinFaces();
+    }
+    else if(m==='draw'){
+      initDraw();
+      const sc=document.createElement('div'); sc.className='draw-scene';
+      const ds=document.createElement('div'); ds.className='draw-stage';
+      const jar=document.createElement('div'); jar.className='draw-jar';
+      const lip=document.createElement('div'); lip.className='lip';
+      jar.appendChild(lip);
+      const sticks=document.createElement('div'); sticks.className='draw-sticks'; sticks.id='drawSticks';
+      jar.appendChild(sticks);
+      ds.appendChild(jar);
+      const card=document.createElement('div'); card.className='draw-card'; card.id='drawCard';
+      card.textContent='点下方按钮抽一根';
+      const cnt=document.createElement('div'); cnt.className='draw-count'; cnt.id='drawCount';
+      const reset=document.createElement('button'); reset.className='sub-act'; reset.textContent='重置签筒';
+      reset.onclick=()=>{initDraw();document.getElementById('drawCard').textContent='点下方按钮抽一根';
+        document.getElementById('drawCard').classList.remove('pop');updateDrawCount();};
+      sc.appendChild(ds); sc.appendChild(card); sc.appendChild(cnt); sc.appendChild(reset);
+      stage.appendChild(sc);
+      stage.appendChild(actBtn('抽一根',drawLot));
+      stage.appendChild(resultBox());
+      updateDrawCount();
+    }
+
+    area.appendChild(stage);
+  }
+
+  function actBtn(label,fn){ const b=document.createElement('button'); b.className='act'; b.textContent=label; b.onclick=fn; return b; }
+  function resultBox(){ const r=document.createElement('div'); r.className='result'; r.id='result';
+    r.innerHTML='<div class="ttl">天意是</div><div class="val"></div>'; return r; }
+  function showResult(text,ttl){
+    const r=document.getElementById('result'); if(!r) return;
+    if(ttl) r.querySelector('.ttl').textContent=ttl;
+    r.querySelector('.val').textContent=text; r.classList.add('show');
+  }
+
+  /* ---------- 转盘 ---------- */
+  function drawWheel(){
+    const canvas=document.getElementById('wheelCanvas'); if(!canvas) return;
+    const ctx=canvas.getContext('2d'); if(!ctx) return;
+    const dpr=window.devicePixelRatio||1, size=300;
+    canvas.width=size*dpr; canvas.height=size*dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,size,size);
+    const cx=size/2, cy=size/2, r=size/2-4;
+    const opts=curOpts(), n=opts.length;
+    if(n===0){
+      ctx.fillStyle='#F1E3D2'; ctx.beginPath(); ctx.arc(cx,cy,r,0,2*Math.PI); ctx.fill();
+      ctx.fillStyle='#927B66'; ctx.font='600 15px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('先添加选项',cx,cy); return;
+    }
+    const seg=2*Math.PI/n;
+    for(let i=0;i<n;i++){
+      const start=i*seg-Math.PI/2, end=(i+1)*seg-Math.PI/2;
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,start,end); ctx.closePath();
+      ctx.fillStyle=warmPalette[i%warmPalette.length]; ctx.fill();
+      ctx.save();
+      const mid=(start+end)/2; ctx.translate(cx,cy); ctx.rotate(mid);
+      let label=opts[i]; if(label.length>9) label=label.slice(0,9)+'…';
+      ctx.fillStyle='#4A3A2E'; ctx.font='700 17px "PingFang SC","Microsoft YaHei",sans-serif';
+      if(mid>Math.PI/2 && mid<3*Math.PI/2){ ctx.rotate(Math.PI); ctx.textAlign='left'; ctx.fillText(label,-(r-18),0); }
+      else { ctx.textAlign='right'; ctx.fillText(label,r-18,0); }
+      ctx.restore();
+    }
+    ctx.beginPath(); ctx.arc(cx,cy,26,0,2*Math.PI); ctx.fillStyle='#FBF3E7'; ctx.fill();
+    ctx.lineWidth=3; ctx.strokeStyle='#E08E6D'; ctx.stroke();
+    ctx.fillStyle='#E08E6D'; ctx.font='700 13px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('GO',cx,cy);
+  }
+  function spinWheel(){
+    const opts=curOpts(); if(opts.length===0){ showResult('先添加几个选项再转'); return; }
+    if(spinning) return; spinning=true;
+    const n=opts.length, segDeg=360/n;
+    const winner=Math.floor(Math.random()*n);
+    const center=winner*segDeg+segDeg/2;
+    const desiredMod=((360-center)%360+360)%360;
+    const cur=((wheelRotation%360)+360)%360;
+    let delta=desiredMod-cur; if(delta<0) delta+=360;
+    wheelRotation += 360*5 + delta;
+    const cv=document.getElementById('wheelCanvas');
+    cv.style.transition='transform 4s cubic-bezier(.17,.67,.25,1)';
+    cv.style.transform='rotate('+wheelRotation+'deg)';
+    setTimeout(()=>{ spinning=false; showResult(opts[winner]); },4150);
+  }
+
+  /* ---------- 色子 ---------- */
+  const dieChar=['','⚀','⚁','⚂','⚃','⚄','⚅'];
+  function rollDice(){
+    const count=state.dice, d1=document.getElementById('die1'), d2=document.getElementById('die2');
+    if(count===2) d2.style.display='flex';
+    const dice=curScene().dice;
+    let rolls=[1,1], ticks=0, max=12;
+    const iv=setInterval(()=>{
+      for(let i=0;i<count;i++){
+        rolls[i]=1+Math.floor(Math.random()*6);
+        const e=i===0?d1:d2; e.textContent=dieChar[rolls[i]];
+        e.classList.remove('roll'); void e.offsetWidth; e.classList.add('roll');
+      }
+      ticks++;
+      if(ticks>=max){
+        clearInterval(iv);
+        if(count===1){
+          const opt=dice[rolls[0]-1];
+          showResult(opt?('掷出 '+rolls[0]+' 点 · '+opt):('掷出 '+rolls[0]+' 点 · 未设置选项'));
+        }else{
+          const a=dice[rolls[0]-1], b=dice[rolls[1]-1];
+          const sum=rolls[0]+rolls[1];
+          const txt=(a||'未设置')+' / '+(b||'未设置');
+          showResult('掷出 '+sum+' 点\n'+txt, '两颗骰子');
+        }
+      }
+    },60);
+  }
+
+  /* ---------- 硬币 ---------- */
+  function syncCoinFaces(){
+    const f=document.getElementById('coinFront'), b=document.getElementById('coinBack');
+    if(!f||!b) return;
+    const coin=curScene().coin||['',''];
+    f.textContent = coin[0]||'正'; b.textContent = coin[1]||'反';
+  }
+  function flipCoin(){
+    const coin=document.getElementById('coin'); if(!coin) return;
+    const coinOpts=curScene().coin||['',''];
+    const result=Math.random()<0.5?'front':'back';
+    coinRotation += (result==='front'?360*6:180+360*6);
+    coin.style.transform='rotateY('+coinRotation+'deg)';
+    const text = result==='front' ? (coinOpts[0]||'正') : (coinOpts[1]||'反');
+    setTimeout(()=>showResult(text),1050);
+  }
+
+  /* ---------- 抽签 ---------- */
+  function initDraw(){
+    drawPool=curOpts().map((_,i)=>i); shuffle(drawPool);
+    renderSticks();
+  }
+  function renderSticks(){
+    const sticks=document.getElementById('drawSticks'); if(!sticks) return;
+    const total=curOpts().length;
+    let html=''; const n=Math.min(total,18);
+    for(let i=0;i<n;i++) html+='<div class="st"></div>';
+    sticks.innerHTML=html;
+  }
+  function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } }
+  function updateDrawCount(){
+    const c=document.getElementById('drawCount'); if(!c) return;
+    c.textContent='剩余 '+(curOpts().length-drawPool.length)+' / 共 '+curOpts().length+' 根';
+    renderSticks();
+  }
+  function drawLot(){
+    const opts=curOpts();
+    if(opts.length===0){ showResult('先添加选项'); return; }
+    if(drawPool.length===0){ showResult('签已抽完，点「重置签筒」'); return; }
+    const idx=drawPool.pop();
+    const card=document.getElementById('drawCard');
+    card.textContent=opts[idx];
+    card.classList.remove('pop'); void card.offsetWidth; card.classList.add('pop');
+    updateDrawCount(); showResult(opts[idx]);
+  }
+
+  /* ---------- 页面切换 ---------- */
+  function goPage2(){
+    document.getElementById('page1').classList.remove('active');
+    document.getElementById('page2').classList.add('active');
+    document.getElementById('step1').classList.remove('on');
+    document.getElementById('step2').classList.add('on');
+    document.getElementById('line').classList.add('done');
+    document.getElementById('sceneName').textContent = curScene().name;
+    renderMethodGrid(); renderPlayArea(); renderEditor();
+    window.scrollTo(0,0);
+  }
+  function goPage1(){
+    state.method=null;
+    document.getElementById('page2').classList.remove('active');
+    document.getElementById('page1').classList.add('active');
+    document.getElementById('step2').classList.remove('on');
+    document.getElementById('step1').classList.add('on');
+    document.getElementById('line').classList.remove('done');
+    renderSceneList();
+    window.scrollTo(0,0);
+  }
+  document.getElementById('backBtn').onclick = goPage1;
+
+  /* ---------- 编辑区（按方式） ---------- */
+  function renderEditor(){
+    let ed = document.getElementById('optEditor');
+    if(!ed){
+      ed = document.createElement('div'); ed.className='editor'; ed.id='optEditor';
+      const playArea = document.getElementById('playArea');
+      playArea.parentNode.insertBefore(ed, playArea.nextSibling);
+    }
+    ed.innerHTML='';
+    if(!state.method) return;
+    const scene=curScene();
+
+    if(state.method==='wheel' || state.method==='draw'){
+      // 共用选项池
+      const h=document.createElement('h3');
+      h.textContent = '编辑选项：'+scene.name;
+      ed.appendChild(h);
+      const hint=document.createElement('div'); hint.className='hint';
+      hint.textContent = state.method==='wheel' ? '选项会均分填入转盘 · 数量不限 · 自动保存'
+                                              : '这些就是签筒里的签 · 数量不限 · 自动保存';
+      ed.appendChild(hint);
+      scene.options.forEach((opt,i)=>{
+        const row=document.createElement('div'); row.className='opt-row';
+        const inp=document.createElement('input'); inp.value=opt; inp.placeholder='选项内容';
+        inp.oninput=()=>{ scene.options[i]=inp.value; save();
+          if(state.method==='wheel') drawWheel();
+          if(state.method==='draw') updateDrawCount(); };
+        const del=document.createElement('button'); del.className='del'; del.textContent='×';
+        del.onclick=()=>{ scene.options.splice(i,1); save(); renderPlayArea(); renderEditor(); };
+        row.appendChild(inp); row.appendChild(del); ed.appendChild(row);
+      });
+      const add=document.createElement('button'); add.className='add-opt'; add.textContent='＋ 添加选项';
+      add.onclick=()=>{ scene.options.push('新选项'); save(); renderPlayArea(); renderEditor();
+        const rows=ed.querySelectorAll('.opt-row input'); if(rows.length) rows[rows.length-1].focus(); };
+      ed.appendChild(add);
+    }
+    else if(state.method==='coin'){
+      const h=document.createElement('h3');
+      h.textContent='设定硬币两面：'+scene.name;
+      ed.appendChild(h);
+      const hint=document.createElement('div'); hint.className='hint';
+      hint.textContent='分别填正面、反面对应的选项，抛中哪面显示哪边 · 自动保存';
+      ed.appendChild(hint);
+      const labels=['正面','反面'];
+      (scene.coin||['','']).forEach((v,i)=>{
+        const row=document.createElement('div'); row.className='opt-row';
+        const idx=document.createElement('span'); idx.className='idx'; idx.textContent=labels[i];
+        const inp=document.createElement('input'); inp.value=v||''; inp.placeholder=labels[i]+'的选项';
+        inp.oninput=()=>{ scene.coin[i]=inp.value; save(); syncCoinFaces(); };
+        row.appendChild(idx); row.appendChild(inp); ed.appendChild(row);
+      });
+    }
+    else if(state.method==='dice'){
+      const h=document.createElement('h3');
+      h.textContent='设定点数对应选项：'+scene.name;
+      ed.appendChild(h);
+      const hint=document.createElement('div'); hint.className='hint';
+      hint.textContent='1-6 点各对应一个选项，可留空 · 各场景单独记忆 · 自动保存';
+      ed.appendChild(hint);
+      for(let i=0;i<6;i++){
+        const row=document.createElement('div'); row.className='opt-row';
+        const idx=document.createElement('span'); idx.className='idx'; idx.textContent=(i+1)+'点';
+        const inp=document.createElement('input'); inp.value=scene.dice[i]||''; inp.placeholder=(i+1)+'点的选项';
+        inp.oninput=()=>{ scene.dice[i]=inp.value; save(); };
+        row.appendChild(idx); row.appendChild(inp); ed.appendChild(row);
+      }
+    }
+  }
+
+  /* ---------- 弹窗 ---------- */
+  let modalCb=null;
+  function openModal(title,val,cb){
+    document.getElementById('modalTitle').textContent=title;
+    document.getElementById('modalInput').value=val||'';
+    document.getElementById('modal').classList.remove('hidden');
+    modalCb=cb; setTimeout(()=>document.getElementById('modalInput').focus(),50);
+  }
+  function closeModal(){ document.getElementById('modal').classList.add('hidden'); modalCb=null; }
+  document.getElementById('modalCancel').onclick=closeModal;
+  document.getElementById('modalOk').onclick=()=>{ const v=document.getElementById('modalInput').value; if(modalCb) modalCb(v); closeModal(); };
+  document.getElementById('modalInput').addEventListener('keydown',e=>{ if(e.key==='Enter'){ const v=e.target.value; if(modalCb) modalCb(v); closeModal(); } });
+
+  window.addEventListener('resize', ()=>{ if(state.method==='wheel') drawWheel(); });
+
+  renderSceneList();
+})();
+</script>
+</body>
+</html>

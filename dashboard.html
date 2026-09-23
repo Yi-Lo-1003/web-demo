@@ -1,0 +1,1891 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的工作台</title>
+<style>
+:root{
+  --bg:#eef4fb;
+  --paper:#ffffff;
+  --ink:#2b3a52;
+  --muted:#7d8ba3;
+  --line:#d8e3f0;
+  --blue:#4a7fb5;
+  --blue-deep:#3a6b9c;
+  --blue-soft:#e4eef9;
+  --blue-pale:#f3f8fd;
+  --accent:#f2a35c;
+  --red:#d96a6a;
+  --green:#5aa06a;
+  --shadow:0 2px 10px rgba(74,127,181,.10);
+  --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:"PingFang SC","Microsoft YaHei","Segoe UI",system-ui,sans-serif;
+  background:
+    radial-gradient(circle at 15% 10%, #dcebfa 0, transparent 45%),
+    radial-gradient(circle at 85% 90%, #e3e0f5 0, transparent 40%),
+    var(--bg);
+  color:var(--ink);
+  font-size:15px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,textarea,select{font-family:inherit;color:inherit}
+
+.app{display:flex;height:100vh;overflow:hidden}
+
+/* 侧边栏 */
+.sidebar{
+  width:230px;flex-shrink:0;
+  background:rgba(255,255,255,.75);
+  backdrop-filter:blur(8px);
+  border-right:1px solid var(--line);
+  padding:22px 14px;
+  display:flex;flex-direction:column;gap:4px;
+  box-shadow:2px 0 12px rgba(74,127,181,.06);
+}
+.logo{
+  font-size:20px;font-weight:700;color:var(--blue-deep);
+  padding:4px 12px 16px;letter-spacing:.5px;
+  display:flex;align-items:center;gap:8px;
+}
+.logo .dot{width:10px;height:10px;border-radius:50%;background:var(--blue);display:inline-block}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:11px 14px;border-radius:10px;font-size:14.5px;
+  color:var(--ink);transition:.15s;text-align:left;width:100%;
+}
+.nav-item:hover{background:var(--blue-pale)}
+.nav-item.active{background:var(--blue-soft);color:var(--blue-deep);font-weight:600}
+.nav-item .ic{font-size:17px;width:20px;text-align:center}
+.sidebar-foot{margin-top:auto;font-size:12px;color:var(--muted);padding:10px 14px;line-height:1.5}
+
+/* 主区域 */
+.main{flex:1;overflow-y:auto;padding:26px 34px 60px}
+.topbar{display:flex;align-items:center;gap:14px;margin-bottom:22px;flex-wrap:wrap}
+.date-nav{display:flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:5px;box-shadow:var(--shadow)}
+.date-btn{width:34px;height:34px;border-radius:8px;font-size:17px;display:flex;align-items:center;justify-content:center;color:var(--blue-deep)}
+.date-btn:hover{background:var(--blue-pale)}
+.date-label{font-size:15px;font-weight:600;padding:0 8px;min-width:120px;text-align:center;color:var(--ink)}
+.date-label small{display:block;font-size:11px;color:var(--muted);font-weight:400}
+.today-btn{background:var(--blue);color:#fff;font-size:13px;padding:8px 14px;border-radius:9px;font-weight:500;transition:.15s}
+.today-btn:hover{background:var(--blue-deep)}
+.search-box{display:flex;align-items:center;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:0 12px;box-shadow:var(--shadow);flex:1;min-width:200px;max-width:340px;margin-left:auto}
+.search-box input{border:none;outline:none;height:40px;flex:1;font-size:14px;background:transparent}
+.search-box .ic{color:var(--muted)}
+
+/* 板块容器 */
+.panel{display:none}
+.panel.active{display:block;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.panel-title{font-size:21px;font-weight:700;color:var(--blue-deep)}
+.panel-sub{font-size:13px;color:var(--muted);margin-top:2px}
+
+/* 时段问候框 */
+.greeting{border-radius:16px;padding:20px 22px;margin-bottom:16px;position:relative;overflow:hidden;box-shadow:var(--shadow);transition:background .4s}
+.greeting.day{background:linear-gradient(120deg,#eaf4ff 0%,#fff6e6 100%);border:1px solid #d7e9f7}
+.greeting.night{background:linear-gradient(120deg,#1c2b4a 0%,#2c3d66 60%,#3a4a74 100%);border:1px solid #26365c}
+.greeting-deco{position:absolute;top:0;right:0;left:0;height:100%;pointer-events:none;font-size:20px;opacity:.9}
+.greeting-main{position:relative;z-index:1}
+.greeting-text{font-size:24px;font-weight:700;letter-spacing:1px}
+.greeting.day .greeting-text{color:#3a6b9c}
+.greeting.night .greeting-text{color:#f4e7c3}
+.greeting-stat{font-size:13.5px;margin-top:8px;font-weight:500}
+.greeting.day .greeting-stat{color:#7d8ba3}
+.greeting.night .greeting-stat{color:#b9c6e0}
+.greeting-line{position:relative;z-index:1;margin-top:14px;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.7);border-radius:10px;padding:8px 12px}
+.greeting.night .greeting-line{background:rgba(255,255,255,.12)}
+.greeting-line .gl-icon{font-size:15px}
+.greeting-line input{flex:1;border:none;outline:none;background:transparent;font-size:14px;height:26px}
+.greeting.day .greeting-line input{color:var(--ink)}
+.greeting.night .greeting-line input{color:#e8eefc}
+.greeting-line input::placeholder{color:#a9b4c6}
+
+/* 每日诗句 */
+.poem-box{display:flex;align-items:center;justify-content:space-between;gap:16px;border-radius:14px;padding:16px 20px;margin-bottom:16px;background:linear-gradient(135deg,#faf6ef 0%,#f6efe3 100%);border:1px solid #e8ddc9;box-shadow:var(--shadow)}
+.poem-content{flex:1;min-width:0}
+.poem-text{font-size:16px;line-height:1.8;color:#5c5345;letter-spacing:.5px;font-family:"PingFang SC","Microsoft YaHei","KaiTi","STKaiti",serif}
+.poem-source{font-size:12.5px;color:#a3947c;margin-top:6px;text-align:right}
+.poem-refresh{flex-shrink:0;font-size:13px;color:#8c7a5f;background:#fff;border:1px solid #e0d4bd;padding:7px 14px;border-radius:20px;transition:.15s;white-space:nowrap}
+.poem-refresh:hover{background:#f3e9d8;color:#6b5941;border-color:#d3c4a6}
+
+/* 卡片 */
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;margin-bottom:16px}
+.card-title{font-size:15px;font-weight:700;margin-bottom:10px;color:var(--ink);display:flex;align-items:center;gap:8px}
+.card-title .tick{font-size:16px}
+
+.grid{display:grid;gap:16px}
+.grid-2{grid-template-columns:1fr 1fr}
+@media(max-width:900px){.grid-2{grid-template-columns:1fr}}
+
+/* 输入行 */
+.add-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.add-row input[type=text]{flex:1;min-width:140px;height:40px;padding:0 12px;border:1px solid var(--line);border-radius:9px;font-size:14px;outline:none;background:var(--blue-pale)}
+.add-row input[type=text]:focus{border-color:var(--blue)}
+.add-row input[type=time]{height:40px;padding:0 8px;border:1px solid var(--line);border-radius:9px;font-size:14px;background:var(--blue-pale);outline:none}
+.add-row input[type=number]{height:40px;width:110px;padding:0 10px;border:1px solid var(--line);border-radius:9px;font-size:14px;background:var(--blue-pale);outline:none}
+.btn{background:var(--blue);color:#fff;height:40px;padding:0 18px;border-radius:9px;font-size:14px;font-weight:500;transition:.15s;white-space:nowrap}
+.btn:hover{background:var(--blue-deep)}
+.btn.ghost{background:transparent;color:var(--blue-deep);border:1px solid var(--line)}
+.btn.ghost:hover{background:var(--blue-pale)}
+.btn.small{height:32px;padding:0 12px;font-size:13px}
+.btn.danger{background:#fbecec;color:var(--red)}
+.btn.danger:hover{background:#f7dcdc}
+
+/* 待办列表 */
+.item{display:flex;align-items:flex-start;gap:10px;padding:11px 6px;border-bottom:1px dashed var(--line)}
+.item:last-child{border-bottom:none}
+.item .chk{width:19px;height:19px;border:2px solid var(--line);border-radius:6px;flex-shrink:0;margin-top:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;transition:.15s}
+.item .chk.done{background:var(--green);border-color:var(--green)}
+.item .chk.pri{border-color:var(--accent)}
+.item .body{flex:1;min-width:0}
+.item .txt{word-break:break-word}
+.item .txt.done{text-decoration:line-through;color:var(--muted)}
+.item .meta{font-size:12px;color:var(--muted);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tag{font-size:11px;padding:1px 7px;border-radius:6px;white-space:nowrap}
+.tag.pri{background:#fdf0e3;color:#c0782f}
+.tag.time{background:var(--blue-soft);color:var(--blue-deep)}
+.tag.note{background:#eef3ec;color:var(--green)}
+.tag.carry{background:#fbf0e0;color:#b8782a;font-weight:600}
+.tag.date{background:#eef1f7;color:#5a6b8c;font-size:11px}
+.item.carry-item{background:#fffaf3;border-radius:8px;margin-bottom:4px;padding-left:10px;padding-right:10px;border-bottom:1px solid #f0e6d6}
+.item .del{color:var(--muted);font-size:16px;padding:2px 4px;opacity:0;transition:.15s;flex-shrink:0}
+.item:hover .del{opacity:1}
+.item .del:hover{color:var(--red)}
+
+/* 想法便签 */
+.ideas{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.idea{background:var(--blue-pale);border:1px solid var(--line);border-radius:12px;padding:14px 15px;position:relative;transition:.15s}
+.idea:hover{box-shadow:var(--shadow)}
+.idea.important{border-left:4px solid var(--accent);background:#fdf7ef}
+.idea.later{border-left:4px solid var(--muted);opacity:.82}
+.idea .txt{font-size:14.5px;word-break:break-word;padding-right:20px}
+.idea .foot{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+.idea .flags{display:flex;gap:6px}
+.flag{cursor:pointer;font-size:12px;padding:2px 8px;border-radius:6px;border:1px solid var(--line);background:#fff;color:var(--muted);transition:.15s}
+.flag.on-imp{background:#fdf0e3;color:#c0782f;border-color:var(--accent)}
+.flag.on-later{background:#eef1f6;color:var(--blue-deep);border-color:var(--muted)}
+.idea .del{color:var(--muted);opacity:0;transition:.15s;font-size:15px}
+.idea:hover .del{opacity:1}
+.idea .del:hover{color:var(--red)}
+.idea .time{font-size:11px;color:var(--muted)}
+.idea .tag-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.idea-tag{font-size:11.5px;padding:2px 8px;border-radius:6px;white-space:nowrap}
+.idea-tag.type{background:#e4eef9;color:var(--blue-deep)}
+.idea-tag.stage{background:#fdf0e3;color:#c0782f}
+.idea-tag.none{background:#eef1f6;color:var(--muted)}
+
+/* 可勾选标签（方框+表情） */
+.opt{display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;padding:5px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);transition:.15s;user-select:none}
+.opt::before{content:"☐";font-size:15px;color:var(--muted);transition:.15s}
+.opt.on{background:var(--blue-soft);border-color:var(--blue);color:var(--blue-deep);font-weight:600}
+.opt.on::before{content:"☑";color:var(--blue-deep)}
+.opt:hover{background:var(--blue-pale)}
+.opt-group{display:flex;gap:8px;flex-wrap:wrap}
+.picker-group{margin-top:12px}
+.picker-label{font-size:12.5px;color:var(--muted);margin-bottom:6px;font-weight:600}
+.idea-tag-picker{padding-top:4px}
+
+/* 体感实录 */
+.body-row{display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px dashed var(--line);flex-wrap:wrap}
+.body-row:last-child{border-bottom:none}
+.body-field-label{font-size:14px;font-weight:600;min-width:110px;color:var(--ink)}
+.body-row input[type=number]{height:38px;width:140px;padding:0 10px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--blue-pale);outline:none}
+.body-row input[type=number]:focus{border-color:var(--blue)}
+.body-row input[type=text]{height:38px;flex:1;min-width:180px;padding:0 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--blue-pale);outline:none}
+.body-row input[type=text]:focus{border-color:var(--blue)}
+.period-toggle{display:inline-flex;align-items:center;gap:10px;cursor:pointer;font-size:15px;font-weight:600;padding:10px 16px;border:1px solid var(--line);border-radius:10px;background:var(--blue-pale);transition:.15s;user-select:none}
+.period-toggle .pt-box{font-size:20px;color:var(--muted);transition:.15s}
+.period-toggle.on{background:#fdeef3;border-color:#e8a0b5;color:#c2587a}
+.period-toggle.on .pt-box{color:#d9618a}
+.period-hint{font-size:12.5px;color:var(--muted);margin-top:8px}
+
+/* 生理期月历 */
+.period-cal-nav{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.period-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.period-cal .cal-weekday{text-align:center;font-size:12px;color:var(--muted);padding:4px 0;font-weight:600}
+.period-cal .cal-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:13.5px;color:var(--ink);cursor:pointer;position:relative;transition:.12s;background:var(--blue-pale)}
+.period-cal .cal-cell:hover{background:var(--blue-soft)}
+.period-cal .cal-cell.other{color:#c3cfdd;background:transparent}
+.period-cal .cal-cell.period{background:#fdeef3;color:#c2587a;font-weight:700;box-shadow:inset 0 0 0 1px #f0b7c9}
+.period-cal .cal-cell.period::after{content:"🌸";font-size:10px;position:absolute;top:1px;right:3px}
+.period-cal .cal-cell.today{box-shadow:inset 0 0 0 2px var(--blue)}
+.period-cal .cal-cell.today.period{box-shadow:inset 0 0 0 2px var(--blue), inset 0 0 0 4px #f0b7c9}
+
+/* 复盘 */
+.review-q{margin-bottom:18px}
+.review-q .q{font-size:14.5px;font-weight:600;color:var(--blue-deep);margin-bottom:8px;display:flex;gap:8px;align-items:center}
+.review-q .q .num{background:var(--blue-soft);color:var(--blue-deep);width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.review-q textarea{width:100%;min-height:72px;padding:12px;border:1px solid var(--line);border-radius:10px;font-size:14px;resize:vertical;outline:none;background:var(--blue-pale);line-height:1.6}
+.review-q textarea:focus{border-color:var(--blue)}
+
+/* 记账 */
+.stat-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:16px}
+.stat{background:var(--blue-pale);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.stat .k{font-size:12.5px;color:var(--muted)}
+.stat .v{font-size:22px;font-weight:700;margin-top:4px}
+.stat .v.income{color:var(--green)}
+.stat .v.expense{color:var(--red)}
+.stat .v.save{color:var(--blue-deep)}
+.progress{height:8px;background:#e6edf5;border-radius:5px;margin-top:8px;overflow:hidden}
+.progress .bar{height:100%;background:linear-gradient(90deg,var(--blue),#6fa6d6);border-radius:5px;transition:.3s}
+.goal-line{font-size:12px;color:var(--muted);margin-top:6px}
+.ledger-item{display:flex;align-items:center;gap:12px;padding:10px 6px;border-bottom:1px dashed var(--line)}
+.ledger-item:last-child{border-bottom:none}
+.ledger-item .amt{font-weight:700;font-size:15px;min-width:90px;text-align:right}
+.ledger-item .amt.income{color:var(--green)}
+.ledger-item .amt.expense{color:var(--red)}
+.ledger-item .info{flex:1;min-width:0}
+.ledger-item .info .desc{word-break:break-word}
+.ledger-item .info .meta{font-size:12px;color:var(--muted);margin-top:1px}
+.ledger-item .del{color:var(--muted);opacity:0;transition:.15s}
+.ledger-item:hover .del{opacity:1}
+.ledger-item .del:hover{color:var(--red)}
+
+/* 英语 */
+.word-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.word-card{background:var(--blue-pale);border:1px solid var(--line);border-radius:10px;padding:11px 12px;transition:.15s;position:relative}
+.word-card:hover{box-shadow:var(--shadow)}
+.word-card .w{font-weight:700;font-size:15px;color:var(--ink)}
+.word-card .p{font-size:12px;color:var(--blue-deep);margin-top:1px}
+.word-card .m{font-size:12.5px;color:var(--muted);margin-top:3px;word-break:break-word}
+.word-card .master{position:absolute;top:8px;right:8px;cursor:pointer;color:#c9d6e4;font-size:16px;transition:.15s}
+.word-card .master:hover{color:var(--green)}
+.word-card .master.known{color:var(--green)}
+.article{background:var(--blue-pale);border:1px solid var(--line);border-radius:12px;padding:18px 20px;line-height:1.9;font-size:15px;white-space:pre-wrap}
+.article h4{color:var(--blue-deep);margin-bottom:10px}
+.word-mark{background:#fff3d6;padding:0 3px;border-radius:3px;font-weight:600;color:#a06a1e}
+.eng-progress{font-size:13px;color:var(--muted);margin-bottom:12px}
+.eng-progress b{color:var(--blue-deep)}
+
+/* 我的档案 */
+.profile-section{margin-bottom:22px}
+.profile-section .card{margin-bottom:0}
+.profile-add{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.profile-add input{height:38px;padding:0 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;background:var(--blue-pale);outline:none}
+.profile-add input:focus{border-color:var(--blue)}
+.profile-add .pa-title{flex:1;min-width:180px}
+.profile-add .pa-meta{width:150px}
+.profile-item{display:flex;align-items:flex-start;gap:12px;padding:11px 8px;border-bottom:1px dashed var(--line)}
+.profile-item:last-child{border-bottom:none}
+.profile-item .p-body{flex:1;min-width:0}
+.profile-item .p-title{font-size:14.5px;font-weight:600;word-break:break-word}
+.profile-item .p-meta{font-size:12.5px;color:var(--muted);margin-top:2px;word-break:break-word}
+.profile-item .del{color:var(--muted);opacity:0;transition:.15s;font-size:16px;padding:2px 4px;flex-shrink:0}
+.profile-item:hover .del{opacity:1}
+.profile-item .del:hover{color:var(--red)}
+
+/* 搜索面板 */
+.search-results{display:none}
+.search-results.active{display:block;animation:fadeIn .25s ease}
+.result-group{margin-bottom:18px}
+.result-group .g-title{font-size:13px;font-weight:700;color:var(--blue-deep);margin-bottom:8px;padding:6px 10px;background:var(--blue-soft);border-radius:8px}
+.result-line{padding:9px 12px;border-bottom:1px dashed var(--line);font-size:14px;display:flex;gap:10px;align-items:flex-start}
+.result-line .type-tag{font-size:11px;padding:1px 7px;border-radius:6px;flex-shrink:0;margin-top:2px;background:#eef1f6;color:var(--muted)}
+.result-line .txt{word-break:break-word}
+.result-line .txt em{font-style:normal;background:#fff3d6;border-radius:3px;padding:0 2px}
+.no-result{color:var(--muted);text-align:center;padding:40px 0}
+
+.empty-tip{color:var(--muted);font-size:13.5px;text-align:center;padding:18px 0;font-style:italic}
+
+/* toast */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--blue-deep);color:#fff;padding:10px 20px;border-radius:20px;font-size:13.5px;opacity:0;pointer-events:none;transition:.25s;z-index:99;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- 侧边栏 -->
+  <aside class="sidebar">
+    <div class="logo"><span class="dot"></span>我的工作台</div>
+    <button class="nav-item active" data-panel="arrange"><span class="ic">📋</span>今日安排</button>
+    <button class="nav-item" data-panel="ideas"><span class="ic">💡</span>灵感想法</button>
+    <button class="nav-item" data-panel="review"><span class="ic">🌙</span>今日复盘</button>
+    <button class="nav-item" data-panel="body"><span class="ic">🫀</span>体感实录</button>
+    <button class="nav-item" data-panel="money"><span class="ic">💰</span>我的账户</button>
+    <button class="nav-item" data-panel="english"><span class="ic">📚</span>英语学习</button>
+    <button class="nav-item" data-panel="profile"><span class="ic">🗂️</span>我的档案</button>
+  </aside>
+
+  <!-- 主区域 -->
+  <main class="main">
+    <div class="topbar">
+      <div class="date-nav">
+        <button class="date-btn" id="prevDay" title="前一天">‹</button>
+        <div class="date-label" id="dateLabel"></div>
+        <button class="date-btn" id="nextDay" title="后一天">›</button>
+      </div>
+      <button class="today-btn" id="todayBtn">回到今天</button>
+      <div class="search-box">
+        <span class="ic">🔍</span>
+        <input type="text" id="searchInput" placeholder="搜索所有记录…">
+      </div>
+    </div>
+
+    <!-- 搜索结果显示 -->
+    <div class="search-results" id="searchResults"></div>
+
+    <!-- 板块：今日安排 -->
+    <section class="panel active" id="panel-arrange">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">今日安排</div>
+          <div class="panel-sub" id="arrangeSub">待办 + 日程</div>
+        </div>
+      </div>
+
+      <!-- 时段问候框 -->
+      <div class="greeting" id="greeting">
+        <div class="greeting-deco" id="greetingDeco"></div>
+        <div class="greeting-main">
+          <div class="greeting-text" id="greetingText">今天也要加油呀</div>
+          <div class="greeting-stat" id="greetingStat"></div>
+        </div>
+        <div class="greeting-line">
+          <span class="gl-icon">✒️</span>
+          <input type="text" id="dailyLine" placeholder="写一句今天想对自己说的话…" maxlength="100">
+        </div>
+      </div>
+
+      <!-- 每日诗句 -->
+      <div class="poem-box" id="poemBox">
+        <div class="poem-content">
+          <div class="poem-text" id="poemText"></div>
+          <div class="poem-source" id="poemSource"></div>
+        </div>
+        <button class="poem-refresh" id="poemRefresh" title="换一首">换一个 ⟳</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="tick">➕</span>添加一条安排</div>
+        <div class="add-row">
+          <input type="text" id="arrText" placeholder="要做什么？" maxlength="200">
+          <input type="time" id="arrTime" title="设置时间点（留空则为待办）">
+          <input type="text" id="arrNote" placeholder="备注（可选）" maxlength="100" style="max-width:160px">
+          <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--muted);cursor:pointer">
+            <input type="checkbox" id="arrPri"> 重要
+          </label>
+          <button class="btn" id="arrAdd">添加</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="tick">☑️</span>安排清单 <span id="arrCount" style="font-size:12px;color:var(--muted);font-weight:400"></span></div>
+        <div id="arrList"></div>
+      </div>
+    </section>
+
+    <!-- 板块：灵感想法 -->
+    <section class="panel" id="panel-ideas">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">灵感想法</div>
+          <div class="panel-sub">随手记下，可标「重要」或「以后再说」</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="tick">✏️</span>记一个想法</div>
+        <div class="add-row">
+          <input type="text" id="ideaText" placeholder="想到什么就写下来…" maxlength="300">
+          <button class="btn" id="ideaAdd">记下</button>
+        </div>
+        <div class="idea-tag-picker">
+          <div class="picker-group">
+            <div class="picker-label">灵感类型</div>
+            <div class="opt-group" id="ideaTypePicker">
+              <span class="opt" data-v="工作">💼 工作</span>
+              <span class="opt" data-v="学习">📖 学习</span>
+              <span class="opt" data-v="生活">🏠 生活</span>
+              <span class="opt" data-v="创意">🎨 创意</span>
+              <span class="opt" data-v="待办">✅ 待办</span>
+              <span class="opt" data-v="其他">✨ 其他</span>
+            </div>
+          </div>
+          <div class="picker-group">
+            <div class="picker-label">孵化状态</div>
+            <div class="opt-group" id="ideaStagePicker">
+              <span class="opt" data-v="新点子">🌱 新点子</span>
+              <span class="opt" data-v="进行中">🚧 进行中</span>
+              <span class="opt" data-v="已落地">🎉 已落地</span>
+              <span class="opt" data-v="已放弃">🗑️ 已放弃</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="ideas" id="ideaList"></div>
+    </section>
+
+    <!-- 板块：今日复盘 -->
+    <section class="panel" id="panel-review">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">今日复盘</div>
+          <div class="panel-sub">每晚花两分钟，回答几个小问题</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="review-q">
+          <div class="q"><span class="num">1</span>今天完成了什么？</div>
+          <textarea id="review1" placeholder="写下今天最有成就感的事…"></textarea>
+        </div>
+        <div class="review-q">
+          <div class="q"><span class="num">2</span>今天卡在了哪里？</div>
+          <textarea id="review2" placeholder="遇到的问题或困扰…"></textarea>
+        </div>
+        <div class="review-q">
+          <div class="q"><span class="num">3</span>明天最重要的一件事？</div>
+          <textarea id="review3" placeholder="明天要优先推进的…"></textarea>
+        </div>
+        <div class="review-q">
+          <div class="q"><span class="num">4</span>其他想记录的（可选）</div>
+          <textarea id="review4" placeholder="任何想写下来的…"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- 板块：体感实录 -->
+    <section class="panel" id="panel-body">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">体感实录</div>
+          <div class="panel-sub">记录每天的身体状态，标记生理期</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="tick">🌸</span>生理期月历 <span id="periodMonthLabel" style="font-size:13px;color:var(--muted);font-weight:400"></span></div>
+        <div class="period-cal-nav">
+          <button class="date-btn" id="calPrev">‹</button>
+          <button class="date-btn" id="calNext">›</button>
+          <button class="btn small" id="calToday">本月</button>
+          <button class="btn small ghost" id="markToday">标记今天 🌸</button>
+        </div>
+        <div class="period-cal" id="periodCal"></div>
+        <div class="period-hint" id="periodHint"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="tick">🌡️</span>身体状态</div>
+
+        <div class="body-row">
+          <div class="body-field-label">😴 睡眠</div>
+          <div class="opt-group" data-field="sleep">
+            <span class="opt" data-v="好">😊 好</span>
+            <span class="opt" data-v="一般">😐 一般</span>
+            <span class="opt" data-v="差">😫 差</span>
+          </div>
+        </div>
+
+        <div class="body-row">
+          <div class="body-field-label">😄 情绪</div>
+          <div class="opt-group" data-field="mood">
+            <span class="opt" data-v="开心">😄 开心</span>
+            <span class="opt" data-v="平静">🙂 平静</span>
+            <span class="opt" data-v="低落">😞 低落</span>
+            <span class="opt" data-v="焦虑">😰 焦虑</span>
+          </div>
+        </div>
+
+        <div class="body-row">
+          <div class="body-field-label">🤒 身体感受</div>
+          <div class="opt-group" data-field="feel">
+            <span class="opt" data-v="精神好">💪 精神好</span>
+            <span class="opt" data-v="乏力">🥱 乏力</span>
+            <span class="opt" data-v="头痛">🤕 头痛</span>
+            <span class="opt" data-v="不适">🤢 不适</span>
+          </div>
+        </div>
+
+        <div class="body-row">
+          <div class="body-field-label">🏃 运动</div>
+          <div class="opt-group" data-field="sport">
+            <span class="opt" data-v="没运动">🛋️ 没运动</span>
+            <span class="opt" data-v="有运动">🏃 有运动</span>
+          </div>
+        </div>
+
+        <div class="body-row">
+          <div class="body-field-label">⚖️ 体重（kg）</div>
+          <input type="number" id="weightInput" placeholder="留空则不记录" step="0.1" min="0">
+        </div>
+
+        <div class="body-row">
+          <div class="body-field-label">📝 备注</div>
+          <input type="text" id="bodyNote" placeholder="其他想记录的（可选）" maxlength="200">
+        </div>
+      </div>
+    </section>
+
+    <!-- 板块：我的账户 -->
+    <section class="panel" id="panel-money">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">我的账户</div>
+          <div class="panel-sub" id="moneySub">记账 · 存款 · 汇总</div>
+        </div>
+      </div>
+
+      <div class="stat-cards" id="statCards"></div>
+
+      <div class="card">
+        <div class="card-title"><span class="tick">🎯</span>存款目标</div>
+        <div class="add-row">
+          <input type="number" id="goalInput" placeholder="目标金额（元）" min="0">
+          <button class="btn" id="goalSave">保存目标</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="tick">🧾</span>记一笔</div>
+        <div class="add-row">
+          <select id="ledgerType" style="height:40px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:var(--blue-pale);outline:none;font-size:14px">
+            <option value="expense">支出</option>
+            <option value="income">收入</option>
+          </select>
+          <input type="number" id="ledgerAmt" placeholder="金额（元）" min="0" step="0.01">
+          <input type="text" id="ledgerDesc" placeholder="说明（如：午饭 / 打车）" maxlength="100" style="flex:1;min-width:140px">
+          <select id="ledgerCat" style="height:40px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:var(--blue-pale);outline:none;font-size:14px"></select>
+          <button class="btn" id="ledgerAdd">记下</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="tick">📖</span>收支明细 <span id="ledgerCount" style="font-size:12px;color:var(--muted);font-weight:400"></span></div>
+        <div id="ledgerList"></div>
+      </div>
+    </section>
+
+    <!-- 板块：英语学习 -->
+    <section class="panel" id="panel-english">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">英语学习 · 四六级</div>
+          <div class="panel-sub">每天 30 个单词 + 一篇范文</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="eng-progress" id="engProgress"></div>
+        <div class="card-title"><span class="tick">🔤</span>今日单词</div>
+        <div class="word-grid" id="wordList"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="tick">📄</span>今日范文</div>
+        <div class="article" id="articleBox"></div>
+      </div>
+    </section>
+
+    <!-- 板块：我的档案 -->
+    <section class="panel" id="panel-profile">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">我的档案</div>
+          <div class="panel-sub">学习与工作履历，随时补充</div>
+        </div>
+      </div>
+      <div id="profileContainer"></div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============ 工具 ============ */
+var STORE_KEY = "mydesk_data_v1";
+var db = {
+  days: {},        // { "2026-09-20": { arrange:[], ideas:[], review:{q1..q4}, ledger:[], words:{mastered:[]} } }
+  goal: 0,         // 存款目标
+  settings: {}
+};
+
+function load(){
+  try{
+    var raw = localStorage.getItem(STORE_KEY);
+    if(raw){ var d = JSON.parse(raw); db = Object.assign(db, d); }
+  }catch(e){}
+  if(!db.days) db.days = {};
+  if(typeof db.goal !== "number") db.goal = 0;
+  if(!db.profile) db.profile = {};
+}
+function save(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(db)); }catch(e){ toast("保存失败：浏览器存储不可用"); }
+}
+
+/* 日期工具 */
+function fmtDate(d){
+  var y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), day=String(d.getDate()).padStart(2,"0");
+  return y+"-"+m+"-"+day;
+}
+function parseDate(s){
+  var p=s.split("-").map(Number); return new Date(p[0],p[1]-1,p[2]);
+}
+var todayStr = fmtDate(new Date());
+var currentDate = todayStr;   // 当前查看的日期
+
+function getDay(dateStr){
+  if(!db.days[dateStr]) db.days[dateStr] = {arrange:[], ideas:[], review:{}, ledger:[], words:{mastered:[]}, body:{}, line:""};
+  return db.days[dateStr];
+}
+
+function dayLabel(dateStr){
+  var d = parseDate(dateStr);
+  var wd = ["日","一","二","三","四","五","六"][d.getDay()];
+  var t = new Date();
+  var base;
+  if(dateStr === fmtDate(t)) base = dateStr + " <small>今天 · 周" + wd + "</small>";
+  else {
+    var y = new Date(t.getFullYear(), t.getMonth(), t.getDate()-1);
+    if(dateStr === fmtDate(y)) base = dateStr + " <small>昨天 · 周" + wd + "</small>";
+    else base = dateStr + " <small>周" + wd + "</small>";
+  }
+  var dd = db.days[dateStr];
+  if(dd && dd.body && dd.body.period){ base += ' <small style="color:#c2587a">🌸</small>'; }
+  return base;
+}
+
+/* toast */
+var toastTimer;
+function toast(msg){
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 1800);
+}
+
+/* 转义 */
+function esc(s){
+  return String(s==null?"":s).replace(/[&<>"']/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];
+  });
+}
+
+/* ============ 导航 ============ */
+var navItems = document.querySelectorAll(".nav-item");
+var panels = {
+  arrange: document.getElementById("panel-arrange"),
+  ideas: document.getElementById("panel-ideas"),
+  review: document.getElementById("panel-review"),
+  body: document.getElementById("panel-body"),
+  money: document.getElementById("panel-money"),
+  english: document.getElementById("panel-english"),
+  profile: document.getElementById("panel-profile")
+};
+var searchResults = document.getElementById("searchResults");
+var currentPanel = "arrange";
+
+function switchPanel(name){
+  currentPanel = name;
+  navItems.forEach(function(n){ n.classList.toggle("active", n.dataset.panel===name); });
+  Object.keys(panels).forEach(function(k){ panels[k].classList.toggle("active", k===name); });
+  if(name !== "search"){ searchResults.classList.remove("active"); document.getElementById("searchInput").value=""; }
+  renderAll();
+}
+navItems.forEach(function(n){
+  n.addEventListener("click", function(){ switchPanel(n.dataset.panel); });
+});
+
+/* ============ 日期切换 ============ */
+function shiftDate(delta){
+  var d = parseDate(currentDate);
+  d.setDate(d.getDate()+delta);
+  currentDate = fmtDate(d);
+  refreshDateUI();
+  renderAll();
+}
+document.getElementById("prevDay").addEventListener("click", function(){ shiftDate(-1); });
+document.getElementById("nextDay").addEventListener("click", function(){ shiftDate(1); });
+document.getElementById("todayBtn").addEventListener("click", function(){
+  currentDate = todayStr; refreshDateUI(); renderAll();
+});
+function refreshDateUI(){
+  document.getElementById("dateLabel").innerHTML = dayLabel(currentDate);
+}
+
+/* ============ 渲染总控 ============ */
+function renderAll(){
+  renderArrange();
+  renderIdeas();
+  renderReview();
+  renderBody();
+  renderMoney();
+  renderEnglish();
+  renderProfile();
+}
+
+/* ============ 板块：今日安排 ============ */
+function renderGreeting(day){
+  var now = new Date();
+  var h = now.getHours();
+  var isNight = (h >= 22 || h < 6);
+  var g = document.getElementById("greeting");
+  g.classList.toggle("night", isNight);
+  g.classList.toggle("day", !isNight);
+
+  var text = document.getElementById("greetingText");
+  var deco = document.getElementById("greetingDeco");
+
+  if(isNight){
+    text.textContent = "夜深了，注意休息";
+    deco.innerHTML = nightSkyDeco();
+  } else {
+    text.textContent = "今天也要加油呀";
+    deco.innerHTML = daySkyDeco();
+  }
+
+  // 待办统计
+  var undone = day.arrange.filter(function(a){ return !a.done; }).length;
+  var done = day.arrange.length - undone;
+  var stat = document.getElementById("greetingStat");
+  if(day.arrange.length===0){
+    stat.textContent = "今天还没有安排，来列一列要做的事吧 ✨";
+  } else if(undone===0){
+    stat.textContent = "今天的 " + done + " 件事都完成啦，真棒 🎉";
+  } else {
+    stat.textContent = "还有 " + undone + " 项待办没完成，加把劲 💪";
+  }
+
+  // 今日一句话
+  document.getElementById("dailyLine").value = day.line || "";
+}
+
+function daySkyDeco(){
+  var s = '';
+  var pos = [["6%","18%","28px"],["88%","14%","22px"],["70%","55%","18px"],["15%","70%","16px"],["45%","8%","20px"]];
+  pos.forEach(function(p){ s += '<span style="position:absolute;left:'+p[0]+';top:'+p[1]+';font-size:'+p[2]+'">☁️</span>'; });
+  s += '<span style="position:absolute;right:9%;top:12%;font-size:34px">☀️</span>';
+  return s;
+}
+function nightSkyDeco(){
+  var s = '';
+  var stars = [["8%","16%"],["20%","34%"],["80%","12%"],["90%","45%"],["68%","60%"],["40%","12%"],["15%","55%"],["55%","30%"]];
+  stars.forEach(function(p){ s += '<span style="position:absolute;left:'+p[0]+';top:'+p[1]+';font-size:13px;color:#fff;opacity:.8">✦</span>'; });
+  s += '<span style="position:absolute;right:8%;top:14%;font-size:32px">🌙</span>';
+  return s;
+}
+
+/* ---------- 每日诗句 ---------- */
+var POEMS = [
+  ["山重水复疑无路，柳暗花明又一村。","陆游《游山西村》"],
+  ["长风破浪会有时，直挂云帆济沧海。","李白《行路难》"],
+  ["会当凌绝顶，一览众山小。","杜甫《望岳》"],
+  ["不畏浮云遮望眼，自缘身在最高层。","王安石《登飞来峰》"],
+  ["沉舟侧畔千帆过，病树前头万木春。","刘禹锡《酬乐天扬州初逢席上见赠》"],
+  ["千磨万击还坚劲，任尔东西南北风。","郑燮《竹石》"],
+  ["路漫漫其修远兮，吾将上下而求索。","屈原《离骚》"],
+  ["宝剑锋从磨砺出，梅花香自苦寒来。","《警世贤文》"],
+  ["天生我材必有用，千金散尽还复来。","李白《将进酒》"],
+  ["莫愁前路无知己，天下谁人不识君。","高适《别董大》"],
+  ["海内存知己，天涯若比邻。","王勃《送杜少府之任蜀州》"],
+  ["大鹏一日同风起，扶摇直上九万里。","李白《上李邕》"],
+  ["千淘万漉虽辛苦，吹尽狂沙始到金。","刘禹锡《浪淘沙》"],
+  ["欲穷千里目，更上一层楼。","王之涣《登鹳雀楼》"],
+  ["少壮不努力，老大徒伤悲。","《长歌行》"],
+  ["黑发不知勤学早，白首方悔读书迟。","颜真卿《劝学》"],
+  ["读书破万卷，下笔如有神。","杜甫《奉赠韦左丞丈二十二韵》"],
+  ["纸上得来终觉浅，绝知此事要躬行。","陆游《冬夜读书示子聿》"],
+  ["问渠那得清如许，为有源头活水来。","朱熹《观书有感》"],
+  ["业精于勤，荒于嬉；行成于思，毁于随。","韩愈《进学解》"],
+  ["采菊东篱下，悠然见南山。","陶渊明《饮酒》"],
+  ["落红不是无情物，化作春泥更护花。","龚自珍《己亥杂诗》"],
+  ["春蚕到死丝方尽，蜡炬成灰泪始干。","李商隐《无题》"],
+  ["人生自古谁无死，留取丹心照汗青。","文天祥《过零丁洋》"],
+  ["先天下之忧而忧，后天下之乐而乐。","范仲淹《岳阳楼记》"],
+  ["一寸光阴一寸金，寸金难买寸光阴。","《增广贤文》"],
+  ["海阔凭鱼跃，天高任鸟飞。","《古今诗话》"],
+  ["博观而约取，厚积而薄发。","苏轼《稼说送张琥》"],
+  ["不积跬步，无以至千里；不积小流，无以成江海。","荀子《劝学》"],
+  ["锲而不舍，金石可镂。","荀子《劝学》"],
+  ["工欲善其事，必先利其器。","《论语·卫灵公》"],
+  ["三人行，必有我师焉。","《论语·述而》"],
+  ["学而不思则罔，思而不学则殆。","《论语·为政》"],
+  ["知之者不如好之者，好之者不如乐之者。","《论语·雍也》"],
+  ["温故而知新，可以为师矣。","《论语·为政》"],
+  ["天行健，君子以自强不息。","《周易》"],
+  ["穷则独善其身，达则兼济天下。","《孟子·尽心上》"],
+  ["老骥伏枥，志在千里；烈士暮年，壮心不已。","曹操《龟虽寿》"],
+  ["非淡泊无以明志，非宁静无以致远。","诸葛亮《诫子书》"],
+  ["静以修身，俭以养德。","诸葛亮《诫子书》"],
+  ["千里之行，始于足下。","《老子》"],
+  ["合抱之木，生于毫末；九层之台，起于累土。","《老子》"],
+  ["失之东隅，收之桑榆。","《后汉书·冯异传》"],
+  ["临渊羡鱼，不如退而结网。","《汉书·董仲舒传》"],
+  ["穷且益坚，不坠青云之志。","王勃《滕王阁序》"],
+  ["人生如逆旅，我亦是行人。","苏轼《临江仙》"],
+  ["竹杖芒鞋轻胜马，谁怕？一蓑烟雨任平生。","苏轼《定风波》"],
+  ["回首向来萧瑟处，归去，也无风雨也无晴。","苏轼《定风波》"],
+  ["但愿人长久，千里共婵娟。","苏轼《水调歌头》"],
+  ["不识庐山真面目，只缘身在此山中。","苏轼《题西林壁》"],
+  ["夕阳无限好，只是近黄昏。","李商隐《登乐游原》"],
+  ["谁言寸草心，报得三春晖。","孟郊《游子吟》"],
+  ["海上生明月，天涯共此时。","张九龄《望月怀远》"],
+  ["同是天涯沦落人，相逢何必曾相识。","白居易《琵琶行》"],
+  ["野火烧不尽，春风吹又生。","白居易《赋得古原草送别》"],
+  ["接天莲叶无穷碧，映日荷花别样红。","杨万里《晓出净慈寺送林子方》"],
+  ["等闲识得东风面，万紫千红总是春。","朱熹《春日》"],
+  ["春色满园关不住，一枝红杏出墙来。","叶绍翁《游园不值》"],
+  ["小荷才露尖尖角，早有蜻蜓立上头。","杨万里《小池》"],
+  ["欲把西湖比西子，淡妆浓抹总相宜。","苏轼《饮湖上初晴后雨》"],
+  ["明月松间照，清泉石上流。","王维《山居秋暝》"],
+  ["大漠孤烟直，长河落日圆。","王维《使至塞上》"],
+  ["劝君更尽一杯酒，西出阳关无故人。","王维《送元二使安西》"],
+  ["独在异乡为异客，每逢佳节倍思亲。","王维《九月九日忆山东兄弟》"],
+  ["举头望明月，低头思故乡。","李白《静夜思》"],
+  ["飞流直下三千尺，疑是银河落九天。","李白《望庐山瀑布》"],
+  ["两岸猿声啼不住，轻舟已过万重山。","李白《早发白帝城》"],
+  ["抽刀断水水更流，举杯消愁愁更愁。","李白《宣州谢朓楼饯别校书叔云》"],
+  ["日出江花红胜火，春来江水绿如蓝。","白居易《忆江南》"],
+  ["随风潜入夜，润物细无声。","杜甫《春夜喜雨》"],
+  ["感时花溅泪，恨别鸟惊心。","杜甫《春望》"],
+  ["国破山河在，城春草木深。","杜甫《春望》"],
+  ["两个黄鹂鸣翠柳，一行白鹭上青天。","杜甫《绝句》"],
+  ["好雨知时节，当春乃发生。","杜甫《春夜喜雨》"],
+  ["山光悦鸟性，潭影空人心。","常建《题破山寺后禅院》"],
+  ["曲径通幽处，禅房花木深。","常建《题破山寺后禅院》"],
+  ["疏影横斜水清浅，暗香浮动月黄昏。","林逋《山园小梅》"],
+  ["忽如一夜春风来，千树万树梨花开。","岑参《白雪歌送武判官归京》"],
+  ["停车坐爱枫林晚，霜叶红于二月花。","杜牧《山行》"],
+  ["南朝四百八十寺，多少楼台烟雨中。","杜牧《江南春》"],
+  ["清明时节雨纷纷，路上行人欲断魂。","杜牧《清明》"],
+  ["春风得意马蹄疾，一日看尽长安花。","孟郊《登科后》"],
+  ["会挽雕弓如满月，西北望，射天狼。","苏轼《江城子·密州出猎》"]
+];
+
+function poemSeedForDate(dateStr){
+  var seed = 0;
+  for(var i=0;i<dateStr.length;i++){ seed = (seed*31 + dateStr.charCodeAt(i)) % 100000; }
+  return seed;
+}
+
+function renderPoem(){
+  var poem = db.poem; // { date, index }
+  // 如果换天了，按日期重新选
+  if(!poem || poem.date !== todayStr){
+    var idx = poemSeedForDate(todayStr) % POEMS.length;
+    poem = { date: todayStr, index: idx };
+    db.poem = poem;
+    save();
+  }
+  var p = POEMS[poem.index];
+  document.getElementById("poemText").textContent = "「" + p[0] + "」";
+  document.getElementById("poemSource").textContent = "—— " + p[1];
+}
+
+document.getElementById("poemRefresh").addEventListener("click", function(){
+  var cur = db.poem && db.poem.index;
+  var idx;
+  do {
+    idx = Math.floor(Math.random() * POEMS.length);
+  } while(idx === cur && POEMS.length > 1);
+  db.poem = { date: todayStr, index: idx };
+  save();
+  renderPoem();
+  toast("换了一首 ✨");
+});
+
+function renderArrange(){
+  var day = getDay(currentDate);
+  var list = document.getElementById("arrList");
+  document.getElementById("arrangeSub").textContent = dayLabelPlain(currentDate);
+  renderGreeting(day);
+  renderPoem();
+
+  // 当天自己的条目
+  var own = day.arrange.slice();
+
+  // 收集更早日期未完成的待办（无时间点），用于置顶滚动
+  var carried = [];   // { item, fromDate, idx }
+  Object.keys(db.days).forEach(function(ds){
+    if(ds >= currentDate) return; // 只看更早的日期
+    var dd = db.days[ds];
+    if(!dd || !dd.arrange) return;
+    dd.arrange.forEach(function(a, ai){
+      if(a.done) return;          // 已完成不滚
+      if(a.time) return;          // 带时间的日程不滚
+      carried.push({ item: a, fromDate: ds, idx: ai });
+    });
+  });
+  // 遗留待办按来源日期升序（越早越靠前）
+  carried.sort(function(x,y){ return x.fromDate < y.fromDate ? -1 : 1; });
+
+  var totalCount = own.length + carried.length;
+  if(totalCount === 0){
+    list.innerHTML = '<div class="empty-tip">今天还没有安排，先加一条吧 ✍️</div>';
+    document.getElementById("arrCount").textContent = "";
+    return;
+  }
+
+  // 排序当天自己的条目：日程在前，待办在后
+  own.sort(function(a,b){
+    var ta = a.time||"", tb = b.time||"";
+    if(ta && !tb) return -1;
+    if(!ta && tb) return 1;
+    if(ta && tb) return ta<tb?-1:(ta>tb?1:0);
+    return 0;
+  });
+
+  var doneCount = own.filter(function(x){return x.done;}).length + carried.filter(function(x){return x.item.done;}).length;
+  document.getElementById("arrCount").textContent = "（已完成 "+doneCount+"/"+totalCount+"）";
+
+  var html = "";
+
+  // 1. 遗留待办置顶
+  carried.forEach(function(c){
+    var a = c.item;
+    var fromLabel = shortDateLabel(c.fromDate);
+    var timeTag = '<span class="tag carry">📌 来自 '+fromLabel+' 未完成</span>';
+    var priTag = a.pri ? '<span class="tag pri">★ 重要</span>' : '';
+    var noteTag = a.note ? '<span class="tag note">📝 '+esc(a.note)+'</span>' : '';
+    html += '<div class="item carry-item">'+
+      '<div class="chk '+(a.done?"done":"")+(a.pri&&!a.done?" pri":"")+'" data-carry="'+esc(c.fromDate)+'" data-id="'+esc(a.id||"")+'" data-idx="'+c.idx+'">'+(a.done?"✓":"")+'</div>'+
+      '<div class="body">'+
+        '<div class="txt '+(a.done?"done":"")+'">'+esc(a.text)+'</div>'+
+        '<div class="meta">'+timeTag+priTag+noteTag+'</div>'+
+      '</div>'+
+      '<div class="del" data-carrydel="'+esc(c.fromDate)+'" data-id="'+esc(a.id||"")+'" data-idx="'+c.idx+'">✕</div>'+
+    '</div>';
+  });
+
+  // 2. 当天自己的条目
+  own.forEach(function(item){
+    var origIdx = day.arrange.indexOf(item);
+    var timeTag = item.time ? '<span class="tag time">🕒 '+esc(item.time)+'</span>' : '<span class="tag">待办</span>';
+    var priTag = item.pri ? '<span class="tag pri">★ 重要</span>' : '';
+    var noteTag = item.note ? '<span class="tag note">📝 '+esc(item.note)+'</span>' : '';
+    html += '<div class="item">'+
+      '<div class="chk '+(item.done?"done":"")+(item.pri&&!item.done?" pri":"")+'" data-a="'+origIdx+'">'+(item.done?"✓":"")+'</div>'+
+      '<div class="body">'+
+        '<div class="txt '+(item.done?"done":"")+'">'+esc(item.text)+'</div>'+
+        '<div class="meta">'+timeTag+priTag+noteTag+'</div>'+
+      '</div>'+
+      '<div class="del" data-del="'+origIdx+'">✕</div>'+
+    '</div>';
+  });
+
+  list.innerHTML = html;
+}
+
+function shortDateLabel(dateStr){
+  var d = parseDate(dateStr);
+  if(dateStr === todayStr) return "今天";
+  var y = new Date(); y.setDate(y.getDate()-1);
+  if(dateStr === fmtDate(y)) return "昨天";
+  return (d.getMonth()+1) + "月" + d.getDate() + "日";
+}
+
+function dayLabelPlain(dateStr){
+  if(dateStr===todayStr) return "今天 · "+dateStr;
+  var y = new Date(); y.setDate(y.getDate()-1);
+  if(dateStr===fmtDate(y)) return "昨天 · "+dateStr;
+  return dateStr;
+}
+
+document.getElementById("arrAdd").addEventListener("click", addArrange);
+document.getElementById("arrText").addEventListener("keydown", function(e){ if(e.key==="Enter") addArrange(); });
+
+// 今日一句话
+document.getElementById("dailyLine").addEventListener("input", function(){
+  var day = getDay(currentDate);
+  day.line = this.value;
+  save();
+});
+function addArrange(){
+  var text = document.getElementById("arrText").value.trim();
+  var time = document.getElementById("arrTime").value;
+  var note = document.getElementById("arrNote").value.trim();
+  var pri = document.getElementById("arrPri").checked;
+  if(!text){ toast("先写点内容～"); return; }
+  var day = getDay(currentDate);
+  day.arrange.push({id: genId(), text:text, time:time, note:note, pri:pri, done:false, ts:Date.now(), originDate: currentDate});
+  document.getElementById("arrText").value="";
+  document.getElementById("arrNote").value="";
+  document.getElementById("arrTime").value="";
+  document.getElementById("arrPri").checked=false;
+  save(); renderArrange(); toast("已添加 ✓");
+}
+function genId(){
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+}
+
+document.getElementById("arrList").addEventListener("click", function(e){
+  var t = e.target;
+  // 打钩遗留待办（跨天定位到原记录）
+  if(t.dataset.carry !== undefined){
+    var fromDate = t.dataset.carry;
+    var day0 = db.days[fromDate];
+    if(!day0 || !day0.arrange) return;
+    var item = findArrItem(day0.arrange, t.dataset.id, t.dataset.idx);
+    if(!item) return;
+    item.done = !item.done;
+    save(); renderArrange();
+    return;
+  }
+  // 删除遗留待办
+  if(t.dataset.carrydel !== undefined){
+    var fd2 = t.dataset.carrydel;
+    var day2 = db.days[fd2];
+    if(!day2 || !day2.arrange) return;
+    var idx2 = findArrIndex(day2.arrange, t.dataset.id, t.dataset.idx);
+    if(idx2 < 0) return;
+    day2.arrange.splice(idx2, 1);
+    save(); renderArrange(); toast("已删除");
+    return;
+  }
+  // 当天自己的待办
+  if(t.dataset.a !== undefined){
+    var day = getDay(currentDate);
+    var item = day.arrange[t.dataset.a];
+    item.done = !item.done;
+    save(); renderArrange();
+  } else if(t.dataset.del !== undefined){
+    var day = getDay(currentDate);
+    day.arrange.splice(t.dataset.del, 1);
+    save(); renderArrange(); toast("已删除");
+  }
+});
+
+// 按 id（优先）或 idx 定位数组中的记录
+function findArrItem(arr, id, idx){
+  if(id){
+    for(var i=0;i<arr.length;i++){ if(arr[i].id === id) return arr[i]; }
+  }
+  if(idx !== undefined && idx !== ""){ return arr[parseInt(idx)]; }
+  return null;
+}
+function findArrIndex(arr, id, idx){
+  if(id){
+    for(var i=0;i<arr.length;i++){ if(arr[i].id === id) return i; }
+  }
+  if(idx !== undefined && idx !== ""){ return parseInt(idx); }
+  return -1;
+}
+
+/* ============ 板块：灵感想法 ============ */
+var IDEA_TYPES = { "工作":"💼", "学习":"📖", "生活":"🏠", "创意":"🎨", "待办":"✅", "其他":"✨" };
+var IDEA_STAGES = { "新点子":"🌱", "进行中":"🚧", "已落地":"🎉", "已放弃":"🗑️" };
+var curIdeaType = "";
+var curIdeaStage = "";
+
+function renderIdeas(){
+  var day = getDay(currentDate);
+  var list = document.getElementById("ideaList");
+  if(!day.ideas.length){
+    list.innerHTML = '<div class="empty-tip" style="grid-column:1/-1">还没有想法，记下你的第一个灵感 💡</div>';
+    return;
+  }
+  var arr = day.ideas.slice().sort(function(a,b){ return b.ts-a.ts; });
+  list.innerHTML = arr.map(function(idea, i){
+    var origIdx = day.ideas.indexOf(idea);
+    var timeStr = new Date(idea.ts).toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"});
+    var tags = "";
+    if(idea.type){ tags += '<span class="idea-tag type">'+IDEA_TYPES[idea.type]+" "+esc(idea.type)+'</span>'; }
+    if(idea.stage){ tags += '<span class="idea-tag stage">'+IDEA_STAGES[idea.stage]+" "+esc(idea.stage)+'</span>'; }
+    return '<div class="idea">'+
+      '<div class="txt">'+esc(idea.text)+'</div>'+
+      '<div class="tag-row">'+(tags||'<span class="idea-tag none">未标记</span>')+'</div>'+
+      '<div class="foot">'+
+        '<span class="time">'+timeStr+'</span>'+
+      '</div>'+
+      '<span class="del" style="position:absolute;top:10px;right:10px" data-del="'+origIdx+'">✕</span>'+
+    '</div>';
+  }).join("");
+}
+document.getElementById("ideaAdd").addEventListener("click", addIdea);
+document.getElementById("ideaText").addEventListener("keydown", function(e){ if(e.key==="Enter") addIdea(); });
+function addIdea(){
+  var text = document.getElementById("ideaText").value.trim();
+  if(!text){ toast("写点内容～"); return; }
+  var day = getDay(currentDate);
+  day.ideas.push({text:text, type:curIdeaType, stage:curIdeaStage, ts:Date.now()});
+  document.getElementById("ideaText").value="";
+  // 记录后清空已选标签
+  curIdeaType=""; curIdeaStage="";
+  syncIdeaPickerUI();
+  save(); renderIdeas(); toast("已记下 ✓");
+}
+
+function syncIdeaPickerUI(){
+  document.querySelectorAll("#ideaTypePicker .opt").forEach(function(o){ o.classList.toggle("on", o.dataset.v===curIdeaType); });
+  document.querySelectorAll("#ideaStagePicker .opt").forEach(function(o){ o.classList.toggle("on", o.dataset.v===curIdeaStage); });
+}
+document.getElementById("ideaTypePicker").addEventListener("click", function(e){
+  var t = e.target.closest(".opt"); if(!t) return;
+  curIdeaType = (curIdeaType===t.dataset.v) ? "" : t.dataset.v;
+  syncIdeaPickerUI();
+});
+document.getElementById("ideaStagePicker").addEventListener("click", function(e){
+  var t = e.target.closest(".opt"); if(!t) return;
+  curIdeaStage = (curIdeaStage===t.dataset.v) ? "" : t.dataset.v;
+  syncIdeaPickerUI();
+});
+
+document.getElementById("ideaList").addEventListener("click", function(e){
+  var t = e.target;
+  var day = getDay(currentDate);
+  if(t.dataset.del !== undefined){
+    day.ideas.splice(t.dataset.del,1);
+    save(); renderIdeas(); toast("已删除");
+  }
+});
+
+/* ============ 板块：今日复盘 ============ */
+function renderReview(){
+  var day = getDay(currentDate);
+  var r = day.review || {};
+  document.getElementById("review1").value = r.q1||"";
+  document.getElementById("review2").value = r.q2||"";
+  document.getElementById("review3").value = r.q3||"";
+  document.getElementById("review4").value = r.q4||"";
+}
+["review1","review2","review3","review4"].forEach(function(id, i){
+  document.getElementById(id).addEventListener("input", function(){
+    var day = getDay(currentDate);
+    if(!day.review) day.review = {};
+    day.review["q"+(i+1)] = this.value;
+    save();
+  });
+});
+
+/* ============ 板块：体感实录 ============ */
+var BODY_FIELDS = ["sleep","mood","feel","sport"];
+
+function renderBody(){
+  var day = getDay(currentDate);
+  var b = day.body || {};
+  // 选项组
+  BODY_FIELDS.forEach(function(f){
+    var val = b[f] || "";
+    document.querySelectorAll('.opt-group[data-field="'+f+'"] .opt').forEach(function(o){
+      o.classList.toggle("on", o.dataset.v===val);
+    });
+  });
+  // 体重与备注
+  document.getElementById("weightInput").value = (b.weight!=null && b.weight!=="") ? b.weight : "";
+  document.getElementById("bodyNote").value = b.note || "";
+  // 生理期月历
+  renderPeriodCal();
+}
+
+/* ---------- 生理期月历 ---------- */
+var calYear, calMonth;   // 月历当前显示的年月
+
+function initCalToToday(){
+  var t = new Date();
+  calYear = t.getFullYear();
+  calMonth = t.getMonth(); // 0-based
+}
+
+function renderPeriodCal(){
+  if(calYear==null || calMonth==null) initCalToToday();
+  var first = new Date(calYear, calMonth, 1);
+  var startWeekday = first.getDay(); // 0=周日
+  var daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  var daysInPrev = new Date(calYear, calMonth, 0).getDate();
+
+  // 收集本月已标记生理期的日期（集合）
+  var periodSet = {};
+  Object.keys(db.days).forEach(function(ds){
+    var dd = db.days[ds];
+    if(dd && dd.body && dd.body.period){
+      if(ds.slice(0,7) === (calYear+"-"+String(calMonth+1).padStart(2,"0"))) periodSet[ds] = true;
+    }
+  });
+  var periodDates = Object.keys(periodSet).sort();
+
+  // 标题
+  document.getElementById("periodMonthLabel").textContent = calYear + " 年 " + (calMonth+1) + " 月";
+
+  var html = "";
+  ["日","一","二","三","四","五","六"].forEach(function(w){
+    html += '<div class="cal-weekday">'+w+'</div>';
+  });
+
+  var todayS = fmtDate(new Date());
+
+  // 前导空白（上月日期）
+  for(var i=0;i<startWeekday;i++){
+    var d = daysInPrev - startWeekday + 1 + i;
+    var ds = fmtDate(new Date(calYear, calMonth-1, d));
+    html += '<div class="cal-cell other" data-date="'+ds+'">'+d+'</div>';
+  }
+  // 本月日期
+  for(var d=1; d<=daysInMonth; d++){
+    var ds = fmtDate(new Date(calYear, calMonth, d));
+    var cls = "cal-cell";
+    if(periodSet[ds]) cls += " period";
+    if(ds===todayS) cls += " today";
+    html += '<div class="'+cls+'" data-date="'+ds+'">'+d+'</div>';
+  }
+  // 尾部空白（下月日期）
+  var trailing = (startWeekday + daysInMonth) % 7;
+  if(trailing>0){
+    for(var j=1; j<=7-trailing; j++){
+      var ds2 = fmtDate(new Date(calYear, calMonth+1, j));
+      html += '<div class="cal-cell other" data-date="'+ds2+'">'+j+'</div>';
+    }
+  }
+  document.getElementById("periodCal").innerHTML = html;
+
+  // 提示
+  var hint = document.getElementById("periodHint");
+  if(periodDates.length===0){
+    hint.textContent = "本月还没有标记生理期。点击「标记今天 🌸」给今天打标，或点击日历上任意日期查看/标记。";
+  } else {
+    hint.textContent = "本月已标记 " + periodDates.length + " 天：第 " + periodDates.map(function(s){ return parseInt(s.slice(8)); }).join("、") + " 日。";
+  }
+}
+
+// 日历切换
+document.getElementById("calPrev").addEventListener("click", function(){
+  calMonth--; if(calMonth<0){ calMonth=11; calYear--; } renderPeriodCal();
+});
+document.getElementById("calNext").addEventListener("click", function(){
+  calMonth++; if(calMonth>11){ calMonth=0; calYear++; } renderPeriodCal();
+});
+document.getElementById("calToday").addEventListener("click", function(){
+  initCalToToday(); renderPeriodCal();
+});
+
+// 点击日历某天：跳到该日期
+document.getElementById("periodCal").addEventListener("click", function(e){
+  var t = e.target.closest(".cal-cell"); if(!t) return;
+  currentDate = t.dataset.date;
+  refreshDateUI(); renderAll();
+});
+
+// 标记今天（为当前查看日期打标/取消）
+document.getElementById("markToday").addEventListener("click", function(){
+  var day = getDay(currentDate);
+  if(!day.body) day.body = {};
+  var nowOn = !!day.body.period;
+  day.body.period = !nowOn;
+  save();
+  renderPeriodCal(); renderBody();
+  toast(day.body.period ? "已标记 " + currentDate + " 为生理期 🌸" : "已取消 " + currentDate + " 的标记");
+});
+
+// 选项组（睡眠/情绪/身体感受/运动）
+document.querySelectorAll('.opt-group[data-field]').forEach(function(g){
+  g.addEventListener("click", function(e){
+    var t = e.target.closest(".opt"); if(!t) return;
+    var field = g.dataset.field;
+    if(field==="sport" || field==="feel" || field==="mood" || field==="sleep"){
+      var day = getDay(currentDate);
+      if(!day.body) day.body = {};
+      // 再次点击已选中的则取消
+      day.body[field] = (day.body[field]===t.dataset.v) ? "" : t.dataset.v;
+      save(); renderBody();
+    }
+  });
+});
+
+// 体重
+document.getElementById("weightInput").addEventListener("input", function(){
+  var day = getDay(currentDate);
+  if(!day.body) day.body = {};
+  var v = this.value;
+  day.body.weight = v==="" ? "" : parseFloat(v);
+  save();
+});
+// 备注
+document.getElementById("bodyNote").addEventListener("input", function(){
+  var day = getDay(currentDate);
+  if(!day.body) day.body = {};
+  day.body.note = this.value;
+  save();
+});
+
+/* ============ 板块：我的账户 ============ */
+var CATS = ["餐饮","交通","购物","居住","娱乐","学习","医疗","其他"];
+
+function catOptions(){
+  return CATS.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join("");
+}
+document.getElementById("ledgerCat").innerHTML = catOptions();
+
+function renderMoney(){
+  var day = getDay(currentDate);
+  // 统计卡片：当月（基于 currentDate 所在月份）
+  var month = currentDate.slice(0,7);
+  var income=0, expense=0, monthIncome=0, monthExpense=0;
+  Object.keys(db.days).forEach(function(ds){
+    var dd = db.days[ds];
+    if(!dd.ledger) return;
+    dd.ledger.forEach(function(l){
+      if(l.type==="income") income+=l.amt;
+      else expense+=l.amt;
+      if(ds.slice(0,7)===month){
+        if(l.type==="income") monthIncome+=l.amt;
+        else monthExpense+=l.amt;
+      }
+    });
+  });
+  var totalSave = income - expense;
+  var goal = db.goal||0;
+  var pct = goal>0 ? Math.min(100, Math.round(totalSave/goal*100)) : 0;
+  document.getElementById("moneySub").textContent = currentDate.slice(0,7) + " 月汇总";
+
+  document.getElementById("statCards").innerHTML =
+    '<div class="stat"><div class="k">本月收入</div><div class="v income">¥'+fmtMoney(monthIncome)+'</div></div>'+
+    '<div class="stat"><div class="k">本月支出</div><div class="v expense">¥'+fmtMoney(monthExpense)+'</div></div>'+
+    '<div class="stat"><div class="k">累计结余</div><div class="v save">¥'+fmtMoney(totalSave)+'</div></div>'+
+    '<div class="stat"><div class="k">存款目标</div><div class="v save">¥'+fmtMoney(goal)+'</div>'+
+      '<div class="progress"><div class="bar" style="width:'+pct+'%"></div></div>'+
+      '<div class="goal-line">'+(goal>0? ("已达成 "+pct+"%") : "尚未设定目标")+'</div>'+
+    '</div>';
+
+  // 明细：跨天累计显示，带日期，按时间倒序
+  var list = document.getElementById("ledgerList");
+  var all = [];
+  Object.keys(db.days).forEach(function(ds){
+    var dd = db.days[ds];
+    if(!dd.ledger || !dd.ledger.length) return;
+    dd.ledger.forEach(function(l, idx){
+      all.push({ l: l, ds: ds, idx: idx });
+    });
+  });
+  document.getElementById("ledgerCount").textContent = all.length ? "（共 "+all.length+" 笔）" : "";
+  if(!all.length){
+    list.innerHTML = '<div class="empty-tip">还没有任何收支记录</div>';
+  } else {
+    all.sort(function(a,b){ return b.l.ts - a.l.ts; });
+    list.innerHTML = all.map(function(rec){
+      var l = rec.l;
+      var cls = l.type==="income"?"income":"expense";
+      var sign = l.type==="income"?"+":"-";
+      var dateTag = '<span class="tag date">'+rec.ds+'</span>';
+      return '<div class="ledger-item">'+
+        '<div class="info"><div class="desc">'+esc(l.desc||"未命名")+'</div>'+
+        '<div class="meta">'+dateTag+' '+esc(l.cat||"")+' · '+new Date(l.ts).toLocaleString("zh-CN",{hour:"2-digit",minute:"2-digit"})+'</div></div>'+
+        '<div class="amt '+cls+'">'+sign+'¥'+fmtMoney(l.amt)+'</div>'+
+        '<div class="del" data-ds="'+esc(rec.ds)+'" data-idx="'+rec.idx+'">✕</div>'+
+      '</div>';
+    }).join("");
+  }
+
+  document.getElementById("goalInput").value = goal>0 ? goal : "";
+}
+function fmtMoney(n){
+  return (Math.round(n*100)/100).toLocaleString("zh-CN",{maximumFractionDigits:2});
+}
+
+document.getElementById("ledgerAdd").addEventListener("click", addLedger);
+function addLedger(){
+  var type = document.getElementById("ledgerType").value;
+  var amt = parseFloat(document.getElementById("ledgerAmt").value);
+  var desc = document.getElementById("ledgerDesc").value.trim();
+  var cat = document.getElementById("ledgerCat").value;
+  if(isNaN(amt) || amt<=0){ toast("请输入正确金额"); return; }
+  var day = getDay(currentDate);
+  day.ledger.push({type:type, amt:amt, desc:desc||"未命名", cat:cat, ts:Date.now()});
+  document.getElementById("ledgerAmt").value="";
+  document.getElementById("ledgerDesc").value="";
+  save(); renderMoney(); toast("已记下 ✓");
+}
+document.getElementById("goalSave").addEventListener("click", function(){
+  var v = parseFloat(document.getElementById("goalInput").value);
+  if(isNaN(v) || v<0){ toast("请输入正确金额"); return; }
+  db.goal = v; save(); renderMoney(); toast("目标已保存 ✓");
+});
+document.getElementById("ledgerList").addEventListener("click", function(e){
+  var t = e.target.closest(".del");
+  if(!t) return;
+  var ds = t.dataset.ds;
+  var idx = parseInt(t.dataset.idx, 10);
+  if(ds && db.days[ds] && db.days[ds].ledger && db.days[ds].ledger[idx]){
+    db.days[ds].ledger.splice(idx, 1);
+    save(); renderMoney(); toast("已删除");
+  }
+});
+
+/* ============ 板块：英语学习 ============ */
+var WORD_BANK = [
+  ["abandon","v. 放弃，抛弃"],["ability","n. 能力，才能"],["absorb","v. 吸收，使专心"],
+  ["abstract","adj. 抽象的 n. 摘要"],["academic","adj. 学术的，学院的"],["access","n. 通道；接近 v. 访问"],
+  ["accompany","v. 陪伴，伴随"],["accomplish","v. 完成，实现"],["account","n. 账户；描述 v. 解释"],
+  ["accurate","adj. 准确的，精确的"],["achieve","v. 达到，实现"],["acknowledge","v. 承认，致谢"],
+  ["acquire","v. 获得，习得"],["adapt","v. 适应；改编"],["adequate","adj. 足够的，胜任的"],
+  ["adjust","v. 调整，适应"],["administration","n. 管理；行政"],["admire","v. 钦佩，赞赏"],
+  ["adopt","v. 采纳；收养"],["advance","v. 前进 n. 进步"],["advantage","n. 优势，有利条件"],
+  ["advertise","v. 做广告"],["advocate","v. 提倡 n. 拥护者"],["affect","v. 影响；感动"],
+  ["afford","v. 负担得起"],["agency","n. 代理机构"],["aggressive","adj. 好斗的；有进取心的"],
+  ["agriculture","n. 农业"],["alternative","n. 替代方案 adj. 可替代的"],["ambition","n. 雄心，抱负"],
+  ["analyze","v. 分析"],["ancient","adj. 古代的"],["announce","v. 宣布，宣告"],
+  ["anxiety","n. 焦虑，担忧"],["apparent","adj. 显然的；表面上的"],["appeal","v./n. 呼吁；吸引"],
+  ["appreciate","v. 感激；欣赏"],["approach","v. 接近 n. 方法"],["appropriate","adj. 适当的"],
+  ["approve","v. 批准；赞成"],["argue","v. 争论，主张"],["arrange","v. 安排，整理"],
+  ["assess","v. 评估，估价"],["assign","v. 分配，指派"],["assist","v. 帮助，协助"],
+  ["assume","v. 假定，承担"],["atmosphere","n. 气氛；大气"],["attach","v. 附上，系上"],
+  ["attitude","n. 态度，看法"],["attract","v. 吸引"],["authority","n. 权威，当局"],
+  ["available","adj. 可获得的；有空的"],["aware","adj. 意识到的"],["balance","n. 平衡；余额"],
+  ["barrier","n. 障碍，屏障"],["behavior","n. 行为，举止"],["benefit","n. 好处 v. 受益"],
+  ["brief","adj. 简短的"],["budget","n. 预算"],["campaign","n. 运动，战役"],
+  ["candidate","n. 候选人，应试者"],["capable","adj. 有能力的"],["capacity","n. 容量；能力"],
+  ["capture","v. 捕获，夺取"],["career","n. 职业，生涯"],["category","n. 类别，范畴"],
+  ["cause","n. 原因 v. 导致"],["celebrate","v. 庆祝"],["challenge","n. 挑战 v. 质疑"],
+  ["character","n. 性格；人物；字符"],["characteristic","n. 特征 adj. 典型的"],["circumstance","n. 环境，情况"],
+  ["civil","adj. 公民的；文明的"],["claim","v. 声称；索取"],["climate","n. 气候；风气"],
+  ["collapse","v. 倒塌；崩溃"],["colleague","n. 同事"],["combine","v. 结合，联合"],
+  ["comment","n./v. 评论"],["commercial","adj. 商业的"],["commit","v. 犯（错误）；承诺"],
+  ["communicate","v. 交流，沟通"],["community","n. 社区，共同体"],["compare","v. 比较"],
+  ["compete","v. 竞争"],["complain","v. 抱怨，投诉"],["complex","adj. 复杂的"],
+  ["concentrate","v. 集中，专注"],["concept","n. 概念，观念"],["concern","n. 关心 v. 涉及"],
+  ["conclude","v. 得出结论；结束"],["conduct","v. 实施；引导 n. 行为"],["conference","n. 会议"],
+  ["confident","adj. 自信的，确信的"],["confirm","v. 确认，证实"],["conflict","n. 冲突，矛盾"],
+  ["confuse","v. 使困惑，混淆"],["connect","v. 连接，联系"],["consequence","n. 结果，后果"],
+  ["consider","v. 考虑，认为"],["consistent","adj. 一致的，坚持的"],["consume","v. 消费，消耗"],
+  ["contact","n./v. 联系，接触"],["contain","v. 包含，容纳"],["contemporary","adj. 当代的"],
+  ["content","n. 内容 adj. 满足的"],["context","n. 上下文，背景"],["contribute","v. 贡献，投稿"],
+  ["convenient","adj. 方便的"],["convince","v. 说服，使相信"],["cooperate","v. 合作"],
+  ["core","n. 核心"],["corporate","adj. 公司的，法人的"],["crucial","adj. 至关重要的"],
+  ["culture","n. 文化"],["currency","n. 货币"],["current","adj. 当前的 n. 水流，电流"],
+  ["debate","n./v. 辩论"],["decade","n. 十年"],["decline","v. 下降；婉拒"],
+  ["decorate","v. 装饰"],["dedicate","v. 奉献，致力于"],["define","v. 定义"],
+  ["definite","adj. 明确的，肯定的"],["delay","v./n. 延迟"],["deliver","v. 递送；发表（演讲）"],
+  ["demand","n./v. 需求，要求"],["demonstrate","v. 证明，演示"],["deny","v. 否认，拒绝"],
+  ["department","n. 部门，系"],["depend","v. 依靠，取决于"],["deposit","n. 存款 v. 存放"],
+  ["describe","v. 描述"],["deserve","v. 值得，应得"],["design","v./n. 设计"],
+  ["desire","n./v. 渴望"],["despite","prep. 尽管"],["destination","n. 目的地"],
+  ["detail","n. 细节"],["detect","v. 察觉，探测"],["determine","v. 决定，确定"],
+  ["develop","v. 发展；开发"],["device","n. 装置，设备"],["devote","v. 奉献"],
+  ["differ","v. 不同"],["digital","adj. 数字的"],["dimension","n. 尺寸；维度"],
+  ["direction","n. 方向；指导"],["discover","v. 发现"],["discuss","v. 讨论"],
+  ["disease","n. 疾病"],["dismiss","v. 解雇；解散"],["display","v./n. 展示，陈列"],
+  ["distinguish","v. 区分，辨别"],["distribute","v. 分配，分发"],["diverse","adj. 多样的"],
+  ["document","n. 文件 v. 记录"],["domestic","adj. 国内的；家庭的"],["dominant","adj. 占主导的"],
+  ["doubt","n./v. 怀疑"],["dramatic","adj. 戏剧性的，巨大的"],["eager","adj. 渴望的"],
+  ["economic","adj. 经济的"],["economy","n. 经济"],["edit","v. 编辑"],
+  ["educate","v. 教育"],["effective","adj. 有效的"],["efficient","adj. 高效的"],
+  ["effort","n. 努力"],["elaborate","adj. 精心制作的 v. 详细说明"],["element","n. 元素，要素"],
+  ["eliminate","v. 消除，淘汰"],["emerge","v. 出现，浮现"],["emotion","n. 情感，情绪"],
+  ["emphasize","v. 强调"],["employ","v. 雇用；使用"],["enable","v. 使能够"],
+  ["encounter","v. 遭遇 n. 相遇"],["encourage","v. 鼓励"],["engage","v. 从事；吸引"],
+  ["enhance","v. 提高，增强"],["enormous","adj. 巨大的"],["ensure","v. 确保"],
+  ["enterprise","n. 企业；事业"],["enthusiasm","n. 热情"],["entire","adj. 全部的"],
+  ["environment","n. 环境"],["equal","adj. 相等的"],["equip","v. 装备"],
+  ["essential","adj. 必要的，本质的"],["establish","v. 建立，确立"],["estimate","v./n. 估计"],
+  ["evaluate","v. 评估，评价"],["eventually","adv. 最终"],["evidence","n. 证据"],
+  ["evident","adj. 明显的"],["evolve","v. 演变，进化"],["examine","v. 检查；考试"],
+  ["exceed","v. 超过"],["excellent","adj. 优秀的"],["exchange","v./n. 交换"],
+  ["exclude","v. 排除"],["expand","v. 扩张，扩大"],["expect","v. 期望，预料"],
+  ["expense","n. 开支，费用"],["experiment","n. 实验"],["expert","n. 专家"],
+  ["explore","v. 探索"],["expose","v. 暴露，揭露"],["express","v. 表达"],
+  ["extend","v. 延伸，扩大"],["extent","n. 程度，范围"],["external","adj. 外部的"],
+  ["extraordinary","adj. 非凡的"],["extreme","adj. 极端的"],["facility","n. 设施，设备"],
+  ["factor","n. 因素"],["familiar","adj. 熟悉的"],["feature","n. 特征 v. 以…为特色"],
+  ["finance","n. 金融，财务"],["flexible","adj. 灵活的"],["focus","n. 焦点 v. 集中"],
+  ["forbid","v. 禁止"],["forecast","v./n. 预测"],["formal","adj. 正式的"],
+  ["former","adj. 以前的"],["formula","n. 公式，配方"],["fortunate","adj. 幸运的"],
+  ["frequent","adj. 频繁的"],["function","n. 功能 v. 运转"],["fundamental","adj. 根本的，基础的"],
+  ["furthermore","adv. 此外"],["generate","v. 产生，生成"],["generous","adj. 慷慨的"],
+  ["genuine","adj. 真正的，真诚的"],["global","adj. 全球的"],["goal","n. 目标"],
+  ["govern","v. 统治，管理"],["gradual","adj. 逐渐的"],["grant","v. 授予 n. 拨款"],
+  ["guarantee","v./n. 保证"],["handle","v. 处理 n. 把手"],["harmony","n. 和谐"],
+  ["hesitate","v. 犹豫"],["highlight","v. 强调 n. 亮点"],["identical","adj. 相同的"],
+  ["identify","v. 识别，确认"],["ignore","v. 忽视"],["illustrate","v. 说明，举例"],
+  ["immediate","adj. 立即的"],["impact","n. 影响 v. 冲击"],["implement","v. 实施"],
+  ["imply","v. 暗示"],["import","v./n. 进口"],["impose","v. 强加，征收"],
+  ["impress","v. 给…留下印象"],["improve","v. 改善，提高"],["incident","n. 事件"],
+  ["include","v. 包括"],["income","n. 收入"],["increase","v./n. 增加"],
+  ["indicate","v. 表明，指示"],["individual","n. 个人 adj. 个人的"],["industry","n. 工业；行业"],
+  ["influence","n./v. 影响"],["inform","v. 通知"],["initial","adj. 最初的"],
+  ["initiative","n. 主动性；倡议"],["injure","v. 伤害"],["innovate","v. 创新"],
+  ["insist","v. 坚持"],["inspect","v. 检查，视察"],["inspire","v. 激励，启发"],
+  ["install","v. 安装"],["instance","n. 例子，实例"],["instead","adv. 代替"],
+  ["institute","n. 学院，研究所"],["instruction","n. 指示，说明"],["instrument","n. 仪器，乐器"],
+  ["insurance","n. 保险"],["integrate","v. 整合，融合"],["intend","v. 打算"],
+  ["interact","v. 互动，相互作用"],["interest","n. 兴趣；利息"],["interpret","v. 解释；口译"],
+  ["interval","n. 间隔"],["interview","n./v. 面试，采访"],["invest","v. 投资"],
+  ["investigate","v. 调查"],["involve","v. 涉及，卷入"],["isolate","v. 隔离"],
+  ["issue","n. 问题；发行"],["item","n. 项目，条目"],["journey","n. 旅程"],
+  ["justify","v. 证明…正当"],["label","n. 标签 v. 标注"],["labor","n. 劳动"],
+  ["launch","v. 发射；发起"],["legal","adj. 法律的，合法的"],["legislation","n. 立法"],
+  ["leisure","n. 闲暇"],["liberal","adj. 自由的；慷慨的"],["license","n. 执照"],
+  ["limit","n./v. 限制"],["link","n./v. 联系"],["locate","v. 位于；定位"],
+  ["logical","adj. 合乎逻辑的"],["maintain","v. 维持，维护"],["major","adj. 主要的 n. 专业"],
+  ["majority","n. 多数"],["manage","v. 管理；设法做到"],["manufacture","v. 制造"],
+  ["mature","adj. 成熟的"],["measure","v. 测量 n. 措施"],["mechanism","n. 机制"],
+  ["media","n. 媒体"],["mental","adj. 心理的，精神的"],["mention","v. 提到"],
+  ["merit","n. 优点，价值"],["method","n. 方法"],["minor","adj. 较小的，次要的"],
+  ["modify","v. 修改，调整"],["monitor","v. 监视 n. 显示器"],["motivate","v. 激励"],
+  ["multiple","adj. 多重的"],["mutual","adj. 相互的"],["negative","adj. 消极的，否定的"],
+  ["negotiate","v. 谈判"],["neutral","adj. 中立的"],["nevertheless","adv. 然而"],
+  ["objective","n. 目标 adj. 客观的"],["observe","v. 观察；遵守"],["obtain","v. 获得"],
+  ["obvious","adj. 明显的"],["occasion","n. 场合，时机"],["occupy","v. 占用，占据"],
+  ["occur","v. 发生"],["offer","v. 提供 n. 提议"],["operate","v. 操作；经营"],
+  ["opportunity","n. 机会"],["oppose","v. 反对"],["optimistic","adj. 乐观的"],
+  ["option","n. 选择"],["ordinary","adj. 普通的"],["organize","v. 组织"],
+  ["origin","n. 起源"],["outcome","n. 结果"],["overall","adj. 总体的"],
+  ["overcome","v. 克服"],["overseas","adj. 海外的"],["participate","v. 参与"],
+  ["particular","adj. 特定的，特别的"],["passion","n. 热情，激情"],["passive","adj. 被动的"],
+  ["pattern","n. 模式，图案"],["pause","n./v. 暂停"],["perceive","v. 感知，理解"],
+  ["percent","n. 百分比"],["perform","v. 执行，表演"],["permanent","adj. 永久的"],
+  ["permit","v. 允许 n. 许可证"],["persist","v. 坚持，持续"],["perspective","n. 视角，观点"],
+  ["persuade","v. 说服"],["phenomenon","n. 现象"],["physical","adj. 身体的；物理的"],
+  ["policy","n. 政策"],["pollute","v. 污染"],["popular","adj. 流行的，受欢迎的"],
+  ["population","n. 人口"],["positive","adj. 积极的，肯定的"],["possess","v. 拥有"],
+  ["potential","adj. 潜在的 n. 潜力"],["practical","adj. 实际的，实用的"],["predict","v. 预测"],
+  ["prefer","v. 更喜欢"],["prepare","v. 准备"],["present","v. 呈现 n. 现在；礼物"],
+  ["preserve","v. 保护，保存"],["pressure","n. 压力"],["prevent","v. 防止"],
+  ["previous","adj. 之前的"],["primary","adj. 主要的，初级的"],["principle","n. 原则"],
+  ["priority","n. 优先事项"],["private","adj. 私人的"],["process","n. 过程 v. 处理"],
+  ["produce","v. 生产"],["profession","n. 职业"],["profit","n. 利润"],
+  ["program","n. 程序，计划"],["progress","n. 进步 v. 前进"],["project","n. 项目 v. 投射"],
+  ["promote","v. 促进；晋升"],["propose","v. 提议，建议"],["prospect","n. 前景，展望"],
+  ["protect","v. 保护"],["prove","v. 证明"],["provide","v. 提供"],
+  ["publish","v. 出版，发布"],["purchase","v./n. 购买"],["pursue","v. 追求"],
+  ["qualify","v. 使合格"],["quality","n. 质量"],["quantity","n. 数量"],
+  ["range","n. 范围 v. 变化"],["rapid","adj. 迅速的"],["rare","adj. 稀有的"],
+  ["react","v. 反应"],["realize","v. 意识到；实现"],["reasonable","adj. 合理的"],
+  ["recall","v. 回忆，召回"],["receive","v. 收到"],["recognize","v. 认出，承认"],
+  ["recommend","v. 推荐"],["recover","v. 恢复，康复"],["reduce","v. 减少"],
+  ["refer","v. 提到，参考"],["reflect","v. 反映；反思"],["reform","n./v. 改革"],
+  ["regard","v. 看待 n. 尊重"],["region","n. 地区"],["register","v. 注册，登记"],
+  ["regret","v./n. 后悔"],["regular","adj. 规律的，定期的"],["regulate","v. 调节，管理"],
+  ["reject","v. 拒绝"],["relate","v. 联系，叙述"],["release","v. 释放，发布"],
+  ["relevant","adj. 相关的"],["relief","n. 缓解，宽慰"],["reluctant","adj. 不情愿的"],
+  ["rely","v. 依赖"],["remain","v. 保持，剩余"],["remark","n./v. 评论"],
+  ["remarkable","adj. 显著的，非凡的"],["remind","v. 提醒"],["remote","adj. 遥远的"],
+  ["remove","v. 移除"],["replace","v. 取代"],["represent","v. 代表"],
+  ["request","n./v. 请求"],["require","v. 需要，要求"],["research","n./v. 研究"],
+  ["resist","v. 抵抗"],["resolve","v. 解决；决心"],["resource","n. 资源"],
+  ["respond","v. 回应"],["responsible","adj. 负责的"],["restrict","v. 限制"],
+  ["reveal","v. 揭示，透露"],["revenue","n. 收入，税收"],["review","v./n. 复习，回顾"],
+  ["revise","v. 修订，复习"],["reward","n. 报酬 v. 奖励"],["routine","n. 常规，例行"],
+  ["rural","adj. 农村的"],["sacrifice","n./v. 牺牲"],["satisfy","v. 满足"],
+  ["scale","n. 规模；刻度"],["schedule","n. 时间表 v. 安排"],["scheme","n. 计划，方案"],
+  ["scope","n. 范围"],["secure","adj. 安全的 v. 获得"],["seek","v. 寻求"],
+  ["select","v. 选择"],["senior","adj. 年长的；高级的"],["sensitive","adj. 敏感的"],
+  ["separate","v. 分开 adj. 分开的"],["sequence","n. 顺序，序列"],["series","n. 系列"],
+  ["settle","v. 解决；定居"],["severe","adj. 严重的，严厉的"],["shift","v./n. 转移，轮班"],
+  ["significant","adj. 重要的，显著的"],["similar","adj. 相似的"],["sincere","adj. 真诚的"],
+  ["site","n. 地点，网站"],["situation","n. 情况，形势"],["sketch","n. 草图"],
+  ["slight","adj. 轻微的"],["smooth","adj. 光滑的，顺利的"],["social","adj. 社会的"],
+  ["solution","n. 解决方案"],["solve","v. 解决"],["source","n. 来源"],
+  ["specific","adj. 具体的，特定的"],["stable","adj. 稳定的"],["standard","n. 标准 adj. 标准的"],
+  ["statement","n. 声明，陈述"],["statistics","n. 统计，数据"],["status","n. 地位，状态"],
+  ["steady","adj. 稳定的"],["stimulate","v. 刺激，激励"],["strategy","n. 策略"],
+  ["strength","n. 力量，优势"],["stress","n. 压力 v. 强调"],["structure","n. 结构"],
+  ["struggle","n./v. 奋斗，挣扎"],["submit","v. 提交"],["substance","n. 物质，实质"],
+  ["sufficient","adj. 足够的"],["suggest","v. 建议，暗示"],["summarize","v. 总结"],
+  ["supply","n./v. 供应"],["support","v./n. 支持"],["suppose","v. 假设，认为"],
+  ["surface","n. 表面"],["survey","n./v. 调查"],["survive","v. 幸存"],
+  ["suspect","v. 怀疑 n. 嫌疑人"],["sustain","v. 维持，支撑"],["symbol","n. 象征，符号"],
+  ["system","n. 系统"],["target","n. 目标"],["technique","n. 技术，技巧"],
+  ["technology","n. 技术"],["temporary","adj. 临时的"],["tend","v. 倾向，趋向"],
+  ["tension","n. 紧张"],["theory","n. 理论"],["therefore","adv. 因此"],
+  ["thorough","adj. 彻底的"],["threat","n. 威胁"],["tolerate","v. 容忍"],
+  ["tough","adj. 艰难的，强硬的"],["trace","v. 追踪 n. 痕迹"],["tradition","n. 传统"],
+  ["transfer","v./n. 转移，调动"],["transform","v. 转变"],["transport","n./v. 运输"],
+  ["treat","v. 对待；治疗"],["trend","n. 趋势"],["typical","adj. 典型的"],
+  ["ultimate","adj. 最终的"],["undergo","v. 经历，遭受"],["unique","adj. 独特的"],
+  ["universal","adj. 普遍的，通用的"],["update","v. 更新"],["urge","v. 敦促 n. 冲动"],
+  ["utilize","v. 利用"],["valid","adj. 有效的"],["value","n. 价值 v. 重视"],
+  ["vary","v. 变化"],["vehicle","n. 车辆"],["version","n. 版本"],
+  ["victim","n. 受害者"],["violate","v. 违反"],["virtual","adj. 虚拟的"],
+  ["visible","adj. 可见的"],["vital","adj. 至关重要的"],["volume","n. 体积；音量"],
+  ["voluntary","adj. 自愿的"],["welfare","n. 福利"],["whereas","conj. 然而"],
+  ["widespread","adj. 广泛的"],["witness","n. 目击者 v. 见证"],["worth","adj. 值得的"],
+  ["yield","v. 产生；屈服 n. 产量"],["zone","n. 区域"]
+];
+
+var ARTICLES = [
+  {title:"The Value of Time", text:"Time is a resource that can never be recovered. Many people fail to realize how valuable each moment is until it has passed. Successful individuals tend to manage their time carefully, setting clear goals and focusing on what matters most. By avoiding unnecessary distractions, we can achieve more in both our studies and our careers. It is never too late to begin making better use of every day."},
+  {title:"The Importance of Persistence", text:"Success rarely comes easily. Those who accomplish great things are often the ones who refuse to give up when faced with difficulties. Persistence means continuing to work toward a goal even when progress seems slow. Every expert was once a beginner, and every achievement begins with a single, small step. If we remain determined and patient, we will eventually overcome the obstacles in our way."},
+  {title:"Learning Beyond the Classroom", text:"Education does not end when we leave school. In today's rapidly changing world, the ability to learn on our own has become essential. Reading widely, asking questions, and applying new knowledge in practice all help us grow. The most successful learners are curious and open-minded, always seeking to improve. A habit of lifelong learning opens doors that formal education alone cannot."},
+  {title:"Health and Happiness", text:"Good health is the foundation of a happy life. Without it, wealth and success lose much of their meaning. Regular exercise, a balanced diet, and enough sleep are simple habits that bring lasting benefits. At the same time, mental health deserves equal attention. Taking time to relax and connect with others helps reduce stress and keeps us positive."},
+  {title:"The Power of Small Habits", text:"We often underestimate the influence of small, daily habits. Reading ten pages a day, saving a little money each week, or exercising for twenty minutes may seem insignificant. Yet over months and years, these tiny actions produce remarkable results. Change does not require a dramatic transformation; it requires consistency. Build good habits today, and they will shape a better tomorrow."},
+  {title:"Communication Matters", text:"The ability to communicate clearly is one of the most valuable skills a person can have. Whether at school, at work, or in daily life, effective communication helps us build trust and avoid misunderstandings. Listening carefully is just as important as speaking well. When we express our ideas with respect and clarity, we strengthen our relationships and open up new opportunities."},
+  {title:"Embracing Change", text:"Change is a constant part of life. New technologies, new jobs, and new relationships all require us to adapt. People who resist change often find themselves left behind, while those who embrace it discover new possibilities. Instead of fearing the unknown, we can view it as a chance to learn and grow. Flexibility is a key to thriving in an unpredictable world."},
+  {title:"The Role of Goals", text:"Goals give our lives direction and purpose. Without them, we may drift from day to day without making real progress. A good goal is specific, measurable, and realistic. Breaking a large goal into smaller steps makes it easier to achieve. By reviewing our goals regularly and adjusting our plans, we stay motivated and focused on what truly matters."}
+];
+
+function seedDailyWords(dateStr){
+  var day = getDay(dateStr);
+  if(!day.words) day.words = {mastered:[]};
+  if(day.words.seed !== dateStr){
+    // 根据日期种子选30个不重复的词
+    var seed = 0;
+    for(var i=0;i<dateStr.length;i++){ seed = (seed*31 + dateStr.charCodeAt(i)) % 100000; }
+    var words = [];
+    var used = new Set();
+    var attempts = 0;
+    while(words.length < 30 && attempts < 500){
+      attempts++;
+      seed = (seed*1103515245 + 12345) % 2147483648;
+      var idx = seed % WORD_BANK.length;
+      if(!used.has(idx)){ used.add(idx); words.push(WORD_BANK[idx]); }
+    }
+    day.words.seed = dateStr;
+    day.words.list = words;
+    save();
+  }
+}
+
+function renderEnglish(){
+  var day = getDay(currentDate);
+  seedDailyWords(currentDate);
+  var words = day.words.list || [];
+  var mastered = day.words.mastered || [];
+
+  var totalInBank = WORD_BANK.length;
+  var knownCount = mastered.length;
+  document.getElementById("engProgress").innerHTML =
+    "词库共 <b>"+totalInBank+"</b> 词，已标记掌握 <b>"+knownCount+"</b> 词"+
+    "（当前日期：<b>"+currentDate+"</b>，每日 30 词）";
+
+  var wordList = document.getElementById("wordList");
+  if(!words.length){
+    wordList.innerHTML = '<div class="empty-tip">暂无单词</div>';
+  } else {
+    wordList.innerHTML = words.map(function(w){
+      var known = mastered.indexOf(w[0]) >= 0;
+      return '<div class="word-card">'+
+        '<span class="master '+(known?"known":"")+'" data-word="'+esc(w[0])+'">'+(known?"★":"☆")+'</span>'+
+        '<div class="w">'+esc(w[0])+'</div>'+
+        '<div class="m">'+esc(w[1])+'</div>'+
+      '</div>';
+    }).join("");
+  }
+
+  // 文章：按日期选一篇
+  var aSeed = 0;
+  for(var i=0;i<currentDate.length;i++){ aSeed = (aSeed*31 + currentDate.charCodeAt(i)) % 100000; }
+  var art = ARTICLES[aSeed % ARTICLES.length];
+  var artHtml = "<h4>"+esc(art.title)+"</h4>" + esc(art.text);
+  document.getElementById("articleBox").innerHTML = artHtml;
+}
+
+document.getElementById("wordList").addEventListener("click", function(e){
+  var t = e.target.closest(".master");
+  if(!t) return;
+  var day = getDay(currentDate);
+  var word = t.dataset.word;
+  var mastered = day.words.mastered || [];
+  var idx = mastered.indexOf(word);
+  if(idx >= 0){ mastered.splice(idx,1); }
+  else { mastered.push(word); }
+  day.words.mastered = mastered;
+  save(); renderEnglish();
+});
+
+/* ============ 板块：我的档案 ============ */
+var PROFILE_SECTIONS = [
+  { key:"edu",     icon:"🎓", name:"教育经历",   titleLabel:"学校 / 专业",  metaLabel:"时间 / 备注" },
+  { key:"campus",  icon:"🏫", name:"校内经历",   titleLabel:"组织 / 部门",  metaLabel:"职责 / 时间" },
+  { key:"cert",    icon:"📜", name:"证书",       titleLabel:"证书名称",      metaLabel:"获得时间" },
+  { key:"award",   icon:"🏆", name:"竞赛与奖项", titleLabel:"比赛名称",      metaLabel:"奖项 / 时间" },
+  { key:"research",icon:"🔬", name:"科研项目",   titleLabel:"项目名称",      metaLabel:"角色 / 时间" },
+  { key:"project", icon:"💻", name:"开发作品",   titleLabel:"作品名称",      metaLabel:"技术栈 / 简介" }
+];
+
+function ensureProfile(){
+  if(!db.profile) db.profile = {};
+  PROFILE_SECTIONS.forEach(function(s){ if(!db.profile[s.key]) db.profile[s.key] = []; });
+}
+
+function renderProfile(){
+  ensureProfile();
+  var container = document.getElementById("profileContainer");
+  var html = "";
+  PROFILE_SECTIONS.forEach(function(s){
+    var items = db.profile[s.key] || [];
+    html += '<div class="profile-section">';
+    html += '<div class="card">';
+    html += '<div class="card-title"><span class="tick">'+s.icon+'</span>'+s.name+' <span style="font-size:12px;color:var(--muted);font-weight:400">（'+items.length+' 条）</span></div>';
+    if(!items.length){
+      html += '<div class="empty-tip">还没有记录，从下面开始添加</div>';
+    } else {
+      html += '<div id="plist-'+s.key+'">';
+      items.forEach(function(it, i){
+        html += '<div class="profile-item">'+
+          '<div class="p-body">'+
+            '<div class="p-title">'+esc(it.title)+'</div>'+
+            (it.meta ? '<div class="p-meta">'+esc(it.meta)+'</div>' : '')+
+          '</div>'+
+          '<div class="del" data-sec="'+s.key+'" data-del="'+i+'">✕</div>'+
+        '</div>';
+      });
+      html += '</div>';
+    }
+    html += '<div class="profile-add">'+
+      '<input type="text" class="pa-title" data-sec="'+s.key+'" placeholder="'+s.titleLabel+'" maxlength="100">'+
+      '<input type="text" class="pa-meta" data-sec="'+s.key+'" placeholder="'+s.metaLabel+'" maxlength="120">'+
+      '<button class="btn small" data-add="'+s.key+'">添加</button>'+
+    '</div>';
+    html += '</div>';
+    html += '</div>';
+  });
+  container.innerHTML = html;
+}
+
+// 事件委托：添加 / 删除
+document.getElementById("profileContainer").addEventListener("click", function(e){
+  var addBtn = e.target.closest("[data-add]");
+  if(addBtn){
+    var key = addBtn.dataset.add;
+    var sec = document.querySelector('.pa-title[data-sec="'+key+'"]');
+    var meta = document.querySelector('.pa-meta[data-sec="'+key+'"]');
+    var title = sec.value.trim();
+    if(!title){ toast("先填一下标题～"); return; }
+    ensureProfile();
+    db.profile[key].push({ title:title, meta:meta.value.trim() });
+    sec.value=""; meta.value="";
+    save(); renderProfile(); toast("已添加 ✓");
+    return;
+  }
+  var delBtn = e.target.closest("[data-del]");
+  if(delBtn){
+    var key2 = delBtn.dataset.sec;
+    var idx = parseInt(delBtn.dataset.del);
+    ensureProfile();
+    db.profile[key2].splice(idx, 1);
+    save(); renderProfile(); toast("已删除");
+  }
+});
+
+// 回车快速添加
+document.getElementById("profileContainer").addEventListener("keydown", function(e){
+  if(e.key==="Enter"){
+    var t = e.target;
+    if(t.classList && (t.classList.contains("pa-title") || t.classList.contains("pa-meta"))){
+      var key = t.dataset.sec;
+      var sec = document.querySelector('.pa-title[data-sec="'+key+'"]');
+      var meta = document.querySelector('.pa-meta[data-sec="'+key+'"]');
+      var title = sec.value.trim();
+      if(!title){ toast("先填一下标题～"); return; }
+      ensureProfile();
+      db.profile[key].push({ title:title, meta:meta.value.trim() });
+      sec.value=""; meta.value="";
+      save(); renderProfile(); toast("已添加 ✓");
+    }
+  }
+});
+
+/* ============ 搜索 ============ */
+document.getElementById("searchInput").addEventListener("input", function(){
+  var q = this.value.trim().toLowerCase();
+  if(!q){
+    searchResults.classList.remove("active");
+    return;
+  }
+  // 隐藏当前面板
+  Object.keys(panels).forEach(function(k){ panels[k].classList.remove("active"); });
+  navItems.forEach(function(n){ n.classList.remove("active"); });
+  searchResults.classList.add("active");
+  renderSearch(q);
+});
+
+function renderSearch(q){
+  var box = document.getElementById("searchResults");
+  var html = "";
+  var total = 0;
+
+  function addGroup(title, lines){
+    if(lines.length){
+      html += '<div class="result-group"><div class="g-title">'+title+'（'+lines.length+'）</div>' + lines.join("") + '</div>';
+      total += lines.length;
+    }
+  }
+  function hl(text){
+    var t = esc(text);
+    var lower = text.toLowerCase();
+    var idx = lower.indexOf(q);
+    if(idx < 0) return t;
+    var before = esc(text.slice(0,idx));
+    var match = esc(text.slice(idx, idx+q.length));
+    var after = esc(text.slice(idx+q.length));
+    return before + "<em>" + match + "</em>" + after;
+  }
+
+  var dates = Object.keys(db.days).sort().reverse();
+  var arrangeLines=[], ideaLines=[], reviewLines=[], ledgerLines=[], bodyLines=[];
+
+  dates.forEach(function(ds){
+    var day = db.days[ds];
+    if(!day) return;
+    (day.arrange||[]).forEach(function(a){
+      var hay = (a.text+" "+(a.note||"")).toLowerCase();
+      if(hay.indexOf(q)>=0) arrangeLines.push('<div class="result-line"><span class="type-tag">安排 · '+ds+'</span><span class="txt">'+hl(a.text)+(a.note? ' <span style="color:#7d8ba3">('+hl(a.note)+')</span>':'')+'</span></div>');
+    });
+    (day.ideas||[]).forEach(function(a){
+      var hay = (a.text+" "+(a.type||"")+" "+(a.stage||"")).toLowerCase();
+      if(hay.indexOf(q)>=0){
+        var tags = "";
+        if(a.type) tags += '<span class="idea-tag type">'+IDEA_TYPES[a.type]+" "+esc(a.type)+'</span>';
+        if(a.stage) tags += '<span class="idea-tag stage">'+IDEA_STAGES[a.stage]+" "+esc(a.stage)+'</span>';
+        ideaLines.push('<div class="result-line"><span class="type-tag">想法 · '+ds+'</span><span class="txt">'+hl(a.text)+(tags?' '+tags:'')+'</span></div>');
+      }
+    });
+    var r = day.review||{};
+    ["q1","q2","q3","q4"].forEach(function(k){
+      var v = r[k]||"";
+      if(v.toLowerCase().indexOf(q)>=0) reviewLines.push('<div class="result-line"><span class="type-tag">复盘 · '+ds+'</span><span class="txt">'+hl(v)+'</span></div>');
+    });
+    (day.ledger||[]).forEach(function(l){
+      var hay = ((l.desc||"")+" "+(l.cat||"")).toLowerCase();
+      if(hay.indexOf(q)>=0) ledgerLines.push('<div class="result-line"><span class="type-tag">账目 · '+ds+'</span><span class="txt">'+hl(l.desc||"")+' · ¥'+fmtMoney(l.amt)+'</span></div>');
+    });
+    var b = day.body||{};
+    var bodyHay = "";
+    if(b.period) bodyHay += "生理期 ";
+    ["sleep","mood","feel","sport"].forEach(function(f){ if(b[f]) bodyHay += b[f]+" "; });
+    if(b.note) bodyHay += b.note;
+    if(b.weight!=null && b.weight!=="") bodyHay += "体重"+b.weight;
+    if(bodyHay.toLowerCase().indexOf(q)>=0){
+      var parts = [];
+      if(b.period) parts.push("🌸生理期");
+      if(b.sleep) parts.push("😴"+b.sleep);
+      if(b.mood) parts.push("😄"+b.mood);
+      if(b.feel) parts.push("🤒"+b.feel);
+      if(b.sport) parts.push("🏃"+b.sport);
+      if(b.weight!=null && b.weight!=="") parts.push("⚖️"+b.weight+"kg");
+      if(b.note) parts.push("📝"+b.note);
+      bodyLines.push('<div class="result-line"><span class="type-tag">体感 · '+ds+'</span><span class="txt">'+hl(parts.join(" · "))+'</span></div>');
+    }
+  });
+
+  // 档案搜索（长期信息，不属于某一天）
+  var profileLines = [];
+  PROFILE_SECTIONS.forEach(function(s){
+    (db.profile && db.profile[s.key] || []).forEach(function(it){
+      var hay = (it.title+" "+(it.meta||"")).toLowerCase();
+      if(hay.indexOf(q)>=0){
+        profileLines.push('<div class="result-line"><span class="type-tag">'+s.icon+' '+s.name+'</span><span class="txt">'+hl(it.title)+(it.meta?' <span style="color:#7d8ba3">('+hl(it.meta)+')</span>':'')+'</span></div>');
+      }
+    });
+  });
+
+  addGroup("📋 安排", arrangeLines);
+  addGroup("💡 想法", ideaLines);
+  addGroup("🌙 复盘", reviewLines);
+  addGroup("💰 账目", ledgerLines);
+  addGroup("🫀 体感", bodyLines);
+  addGroup("🗂️ 档案", profileLines);
+
+  if(total===0){
+    box.innerHTML = '<div class="no-result">没有找到与「'+esc(document.getElementById("searchInput").value)+'」相关的内容</div>';
+  } else {
+    box.innerHTML = html;
+  }
+}
+
+/* ============ 初始化 ============ */
+load();
+initCalToToday();
+refreshDateUI();
+renderAll();
+
+})();
+</script>
+</body>
+</html>
