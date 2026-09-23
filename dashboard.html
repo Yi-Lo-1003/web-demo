@@ -298,6 +298,94 @@ input,textarea,select{font-family:inherit;color:inherit}
 /* toast */
 .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--blue-deep);color:#fff;padding:10px 20px;border-radius:20px;font-size:13.5px;opacity:0;pointer-events:none;transition:.25s;z-index:99;box-shadow:0 4px 16px rgba(0,0,0,.2)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ============ 移动端适配 ============ */
+@media(max-width:768px){
+  body{font-size:14px}
+  /* 整体改为纵向堆叠 */
+  .app{flex-direction:column;height:100vh;overflow:hidden}
+  /* 侧边栏变成顶部横向导航 */
+  .sidebar{
+    width:100%;flex-shrink:0;
+    flex-direction:row;align-items:center;
+    gap:2px;padding:8px 10px;
+    border-right:none;border-bottom:1px solid var(--line);
+    box-shadow:0 2px 8px rgba(74,127,181,.08);
+    overflow-x:auto;overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    background:rgba(255,255,255,.92);
+  }
+  .sidebar::-webkit-scrollbar{display:none}
+  .logo{font-size:16px;padding:4px 8px 4px 2px;letter-spacing:.3px;flex-shrink:0}
+  .logo .dot{width:8px;height:8px}
+  .nav-item{
+    flex-shrink:0;white-space:nowrap;
+    padding:8px 12px;border-radius:9px;font-size:13.5px;
+    gap:6px;
+  }
+  .nav-item .ic{font-size:15px;width:auto}
+  .sidebar-foot{display:none}
+
+  /* 主区域 */
+  .main{flex:1;overflow-y:auto;padding:14px 14px 80px;-webkit-overflow-scrolling:touch}
+
+  /* 顶栏 */
+  .topbar{gap:10px;margin-bottom:14px}
+  .date-nav{width:100%;justify-content:space-between}
+  .date-label{flex:1;min-width:0}
+  .search-box{flex:1 1 100%;min-width:0;max-width:none;margin-left:0}
+  .today-btn{padding:8px 12px}
+
+  /* 问候框 */
+  .greeting{padding:16px;border-radius:14px}
+  .greeting-text{font-size:20px}
+  .greeting-stat{font-size:13px}
+
+  /* 诗句 */
+  .poem-box{padding:14px 16px;gap:10px;align-items:flex-start}
+  .poem-text{font-size:15px}
+
+  /* 卡片 */
+  .card{padding:14px 14px;margin-bottom:12px;border-radius:12px}
+  .panel-title{font-size:18px}
+
+  /* 输入行：手机端换行堆叠 */
+  .add-row{gap:8px}
+  .add-row input[type=text],.add-row input[type=number]{min-width:0}
+  .add-row input[type=time]{flex:1;min-width:0}
+
+  /* 待办项删除按钮：手机端始终显示（无 hover） */
+  .item .del,.idea .del,.ledger-item .del,.profile-item .del{opacity:.6}
+
+  /* 想法便签：单列 */
+  .ideas{grid-template-columns:1fr}
+
+  /* 记账统计卡：两列 */
+  .stat-cards{grid-template-columns:repeat(2,1fr);gap:10px}
+  .stat{padding:12px}
+  .stat .v{font-size:19px}
+
+  /* 英文单词：两列 */
+  .word-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+  .article{padding:14px;font-size:14px}
+
+  /* 生理期月历 */
+  .period-cal{gap:2px}
+  .period-cal .cal-cell{font-size:12.5px;border-radius:6px}
+  .period-cal .cal-cell.period::after{font-size:8px;top:0;right:2px}
+
+  /* 身体状态行：标签占满 */
+  .body-row{gap:10px}
+  .body-field-label{min-width:100%;margin-bottom:2px}
+  .body-row input[type=number],.body-row input[type=text]{width:100%;min-width:0}
+
+  /* 记账明细金额 */
+  .ledger-item .amt{min-width:70px;font-size:14px}
+
+  /* 输入框通用 */
+  input,textarea,select{font-size:16px} /* 防止 iOS 聚焦缩放 */
+  .add-row input[type=text],.add-row input[type=number],.add-row select,.profile-add input{font-size:15px}
+}
 </style>
 </head>
 <body>
@@ -688,6 +776,8 @@ function switchPanel(name){
   navItems.forEach(function(n){ n.classList.toggle("active", n.dataset.panel===name); });
   Object.keys(panels).forEach(function(k){ panels[k].classList.toggle("active", k===name); });
   if(name !== "search"){ searchResults.classList.remove("active"); document.getElementById("searchInput").value=""; }
+  var main = document.querySelector(".main");
+  if(main) main.scrollTop = 0;
   renderAll();
 }
 navItems.forEach(function(n){
